@@ -12,13 +12,16 @@ export function checkInput(question: string): { ok: true } | { ok: false; reason
 }
 
 // Questions containing these are clearly in scope: skip the classifier call (saves ~300ms and a few tokens).
+// Includes self-development verbs: "what do I need to learn?" is the core use case, not off-topic.
 const ON_TOPIC_HINTS =
-  /\b(resume|cv|job|jobs|role|roles|skill|skills|experience|interview|fit|gap|gaps|missing|qualif\w*|requirement\w*|career|salary|hire|hiring|apply|application|cover letter|strength\w*|weakness\w*|#\d)\b/i;
+  /\b(resume|cv|job|jobs|role|roles|skill|skills|experience|interview|fit|gap|gaps|missing|qualif\w*|requirement\w*|career|salary|hire|hired|hiring|apply|application|cover letter|strength\w*|weakness\w*|learn\w*|study|studying|improve\w*|upskill\w*|reskill\w*|course\w*|certif\w*|prepare|prep|practi[cs]e|focus|next step\w*|roadmap|#\d)\b/i;
 
-const CLASSIFIER_PROMPT = `You are a strict topic filter for a career assistant that only discusses the user's resume,
-their uploaded job descriptions, job fit, skill gaps, career advice and interview preparation.
+const CLASSIFIER_PROMPT = `You are a topic filter for a career assistant. In scope: the user's resume, their uploaded
+job descriptions, job fit, skill gaps, what to learn or improve, career advice and interview preparation.
+Out of scope: unrelated tasks such as writing poems, general trivia, homework, or coding help unrelated to their career.
 Reply with exactly one word: on_topic or off_topic.
-Greetings, thanks and follow-up questions to an ongoing career conversation are on_topic.`;
+Greetings, thanks, vague or short questions, and follow-ups in a career conversation are on_topic.
+If you are unsure, answer on_topic: a wrong refusal is worse than answering.`;
 
 /**
  * Cheap LLM classifier for out-of-scope requests ("write a poem", "solve my homework").

@@ -30,3 +30,25 @@ describe('classifyTopic', () => {
     expect(llm.calls).toHaveLength(0);
   });
 });
+
+describe('classifyTopic: self-development questions are in scope', () => {
+  const ctx = { requestId: 't' };
+  it.each([
+    'what i need to learn?',
+    'What should I study next?',
+    'how can I improve?',
+    'which certification should I get',
+    'help me upskill',
+    'what should I focus on to get hired',
+  ])('treats "%s" as on topic without asking the model', async (q) => {
+    const llm = fakeLlm({ complete: 'off_topic' });
+    expect(await classifyTopic(q, llm, ctx)).toBe('on_topic');
+    expect(llm.calls).toHaveLength(0);
+  });
+
+  it('tells the classifier to answer on_topic when unsure', async () => {
+    const llm = fakeLlm({ complete: 'on_topic' });
+    await classifyTopic('hmm, what now?', llm, ctx);
+    expect(llm.calls[0].messages[0].content).toMatch(/unsure.*on_topic/is);
+  });
+});
