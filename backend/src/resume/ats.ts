@@ -15,11 +15,15 @@ export interface AtsCheck {
   detail: string;
 }
 
-const EMAIL = /[\w.+-]+@[\w-]+\.[\w.-]+/;
+// All quantifiers are bounded: resumes can be up to 200k characters and unbounded repeats
+// backtrack quadratically on adversarial input (measured: 15 s → milliseconds).
+const EMAIL = /\b[\w.+-]{1,64}@[\w-]{1,63}\.[\w.-]{2,63}/;
 const PHONE = /(?:\+?\d[\s-]?){9,14}\d/;
-const LINK = /\b(?:linkedin\.com|github\.com|gitlab\.com|behance\.net|dribbble\.com|https?:\/\/)\S+/i;
+const LINK = /\b(?:linkedin\.com|github\.com|gitlab\.com|behance\.net|dribbble\.com|https?:\/\/)\S{1,200}/i;
 // A "measurable result": a percentage, a currency amount, or a number with a scale/unit word.
-const METRIC = /(\d+(?:\.\d+)?\s?%|[$₹€£]\s?\d[\d,.]*\s?[kmb]?|\b\d[\d,.]*\s?(?:k|m|x|\+)?\s?(?:users|customers|requests|engineers|people|ms|hours|days|clients|members|projects|million|billion)\b)/gi;
+const METRIC = /(?<![\d.,])(?:\d{1,6}(?:\.\d{1,3})?\s?%|[$₹€£]\s?\d[\d,.]{0,15}\s?[kmb]?|\d[\d,.]{0,15}\s?(?:k|m|x|\+)?\s?(?:users|customers|requests|engineers|people|ms|hours|days|clients|members|projects|million|billion)\b)/gi;
+/** Contact details and links live at the top of a resume; no need to scan the whole thing. */
+const HEADER_CHARS = 5000;
 
 const REQUIRED_SECTIONS: { name: string; match: RegExp }[] = [
   { name: 'Skills', match: /skill|tech stack/i },
@@ -32,8 +36,10 @@ export function atsChecks(text: string): AtsCheck[] {
   const words = text.split(/\s+/).filter(Boolean).length;
   const metrics = text.match(METRIC)?.length ?? 0;
 
-  const hasEmail = EMAIL.test(text);
-  const hasPhone = PHONE.test(text);
+  const header = text.slice(0, HEADER_CHARS);
+  const hasEmail = EMAIL.test(header);
+  const hasPhone = PHONE.test(header);
+  const hasLink = LINK.test(header);
   const missingSections = REQUIRED_SECTIONS.filter((r) => ![...sections].some((s) => r.match.test(s))).map((r) => r.name);
 
   return [
@@ -65,8 +71,8 @@ export function atsChecks(text: string): AtsCheck[] {
     {
       id: 'links',
       label: 'Profile links',
-      passed: LINK.test(text),
-      detail: LINK.test(text) ? 'LinkedIn, GitHub or portfolio link found.' : 'Add a LinkedIn, GitHub or portfolio link.',
+      passed: hasLink,
+      detail: hasLink ? 'LinkedIn, GitHub or portfolio link found.' : 'Add a LinkedIn, GitHub or portfolio link near the top.',
     },
   ];
 }

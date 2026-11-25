@@ -48,3 +48,13 @@ describe('atsChecks (rule-based, deterministic)', () => {
     expect(byId('jane@x.com').links.passed).toBe(false);
   });
 });
+
+describe('atsChecks performance', () => {
+  it('stays fast on pathological input (no regex backtracking blow-up)', () => {
+    for (const evil of ['a'.repeat(100_000), '1'.repeat(100_000), `${'a.'.repeat(50_000)}`]) {
+      const t0 = Date.now();
+      atsChecks(evil);
+      expect(Date.now() - t0).toBeLessThan(500);
+    }
+  });
+});
