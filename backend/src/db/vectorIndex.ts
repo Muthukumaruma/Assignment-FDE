@@ -8,8 +8,8 @@ export const EMBED_DIMS = 1536;
 export async function ensureVectorIndex(): Promise<void> {
   const coll = Chunk.collection;
   try {
-    // createCollection is a no-op if it exists; search indexes need the collection to exist.
-    await coll.db.createCollection(coll.collectionName).catch(() => undefined);
+    // Search indexes need the collection to exist. Model.createCollection is a no-op if it already does.
+    await Chunk.createCollection();
     const existing = await coll.listSearchIndexes(VECTOR_INDEX).toArray();
     if (existing.length > 0) return;
     await coll.createSearchIndex({
