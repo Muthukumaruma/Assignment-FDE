@@ -3,6 +3,6 @@ name = "careerlens"
 pages_build_output_dir = "dist"
 compatibility_date = "2026-05-01"
 
-[vars]
-# Overridden per environment in the Pages dashboard (Settings → Variables).
-API_ORIGIN = "https://careerlens-api.onrender.com"
+# API_ORIGIN and PROXY_SECRET are set in the Pages dashboard (Settings → Variables and Secrets),
+# not here: variables declared in this file would override the dashboard values.
+# For local testing: npx wrangler pages dev dist --binding API_ORIGIN=http://localhost:4000
