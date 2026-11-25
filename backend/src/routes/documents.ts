@@ -5,6 +5,7 @@ import { Router, type Request } from 'express';
 import { isValidObjectId } from 'mongoose';
 import multer from 'multer';
 import { z } from 'zod';
+import { analyzeJob } from '../analysis/service.js';
 import { currentUser, requireAuth } from '../auth/middleware.js';
 import { env } from '../config/env.js';
 import { extractText } from '../ingest/extract.js';
@@ -105,8 +106,16 @@ export function documentsRouter(deps: AppDeps): Router {
       const doc = await ingestDocument({ userId: user.id, kind, text, ...titleFromText(text) }, deps.llm, ctx);
       created.push(doc);
     }
-    for (const d of created.filter((d) => d.kind === 'job')) await notifyIngested(req, user.id, String(d._id));
+    // The resume was ingested first, so notifying it analyses every sample job in one go.
+    await notifyIngested(req, user.id, String(created[0]._id));
     res.status(201).json(created.map((d) => toPublicDoc(d.toObject() as unknown as DocumentDoc)));
+  });
+
+  router.post('/:id/analyze', async (req, res) => {
+    const user = currentUser(req);
+    const id = String(req.params.id);
+    if (!isValidObjectId(id)) throw new HttpError(404, 'Document not found');
+    res.json(await analyzeJob(user.id, id, deps.llm, { userId: user.id, requestId: String(req.id) }));
   });
 
   router.delete('/:id', async (req, res) => {
