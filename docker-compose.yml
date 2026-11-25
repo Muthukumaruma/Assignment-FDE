@@ -1,0 +1,35 @@
+# Quick start:  docker compose up --build        → http://localhost:8080
+# Uses MongoDB Atlas from backend/.env by default.
+# No Atlas account? Run with the local Atlas image (includes Vector Search):
+#   1. set MONGODB_URI=mongodb://mongo:27017/?directConnection=true in backend/.env
+#   2. docker compose --profile local-db up --build
+services:
+  backend:
+    build: ./backend
+    env_file: ./backend/.env
+    environment:
+      NODE_ENV: production
+      CORS_ORIGIN: http://localhost:8080
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
+    ports:
+      - '8080:8080'
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  mongo:
+    profiles: ['local-db']
+    image: mongodb/mongodb-atlas-local:8
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:
