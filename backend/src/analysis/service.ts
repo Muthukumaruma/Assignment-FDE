@@ -11,6 +11,14 @@ export const FitAnalysisSchema = z.object({
   experienceAlignment: z.string(),
   summary: z.string(),
   interviewTopics: z.array(z.string()),
+  /** Per-criterion breakdown; "overall match" is `score` above. */
+  scorecard: z.object({
+    atsCompatibility: z.object({ score: z.number().int().min(0).max(100), note: z.string() }),
+    keywordMatch: z.object({ score: z.number().int().min(0).max(100), note: z.string() }),
+    technicalSkills: z.object({ score: z.number().int().min(0).max(100), note: z.string() }),
+    experienceRelevance: z.object({ score: z.number().int().min(0).max(100), note: z.string() }),
+    leadershipArchitecture: z.object({ score: z.number().int().min(0).max(100), note: z.string() }),
+  }),
 });
 export type FitAnalysis = z.infer<typeof FitAnalysisSchema>;
 
@@ -23,6 +31,15 @@ Return:
 - experienceAlignment: 2-3 sentences on how the candidate's experience level and domain match the role.
 - summary: one sentence verdict.
 - interviewTopics: 3-6 topics the candidate should prepare for this specific interview.
+- scorecard: score each criterion 0-100 for THIS job, each with a one-sentence note naming the evidence:
+  - atsCompatibility: how well an applicant tracking system would parse and rank this resume for this job
+    (standard headings, the job's exact keywords/titles present, no reliance on tables or graphics).
+  - keywordMatch: share of the job's required and preferred keywords/skills that appear in the resume.
+  - technicalSkills: depth of hands-on evidence for the job's technical requirements.
+  - experienceRelevance: how closely years, domain and responsibilities match the role.
+  - leadershipArchitecture: evidence of leading people, owning design/architecture decisions, mentoring,
+    scaled to what the role expects (a junior role expects little).
+  Use the same calibration as score; keep each note under 20 words.
 Before listing a skill as missing, check every resume section (skills, experience bullets, projects,
 certifications); indirect evidence counts. Work out years of experience from employment dates and do
 not list a years-of-experience requirement as missing when the dates satisfy it.

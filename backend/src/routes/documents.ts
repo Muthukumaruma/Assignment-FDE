@@ -6,6 +6,7 @@ import { isValidObjectId } from 'mongoose';
 import multer from 'multer';
 import { z } from 'zod';
 import { analyzeJob } from '../analysis/service.js';
+import { atsChecks } from '../resume/ats.js';
 import { currentUser, requireAuth } from '../auth/middleware.js';
 import { env } from '../config/env.js';
 import { extractText } from '../ingest/extract.js';
@@ -140,6 +141,15 @@ export function documentsRouter(deps: AppDeps): Router {
     }
     await deleteDocuments([id], deps.files);
     res.status(204).end();
+  });
+
+  router.get('/:id/ats', async (req, res) => {
+    const user = currentUser(req);
+    const id = String(req.params.id);
+    const doc = isValidObjectId(id) ? await DocumentModel.findOne({ _id: id, userId: user.id }, { kind: 1, rawText: 1 }).lean() : null;
+    if (!doc) throw new HttpError(404, 'Document not found');
+    if (doc.kind !== 'resume') throw new HttpError(400, 'The ATS checklist applies to resumes only');
+    res.json({ checks: atsChecks(doc.rawText) });
   });
 
   router.get('/:id/file', async (req, res) => {

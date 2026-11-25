@@ -13,6 +13,13 @@ const FIT = {
   experienceAlignment: 'Strong backend overlap.',
   summary: 'Good fit with one infra gap.',
   interviewTopics: ['System design'],
+  scorecard: {
+    atsCompatibility: { score: 70, note: 'n' },
+    keywordMatch: { score: 60, note: 'n' },
+    technicalSkills: { score: 75, note: 'n' },
+    experienceRelevance: { score: 72, note: 'n' },
+    leadershipArchitecture: { score: 50, note: 'n' },
+  },
 };
 const RESUME = 'Jane\nSKILLS\nReact, Node.js';
 const JOB = 'Dev — Acme\nRequirements\nReact, Kubernetes';

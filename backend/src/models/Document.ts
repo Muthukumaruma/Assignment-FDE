@@ -8,6 +8,18 @@ const analysisSchema = new Schema(
     experienceAlignment: String,
     summary: String,
     interviewTopics: [String],
+    scorecard: {
+      type: new Schema(
+        Object.fromEntries(
+          ['atsCompatibility', 'keywordMatch', 'technicalSkills', 'experienceRelevance', 'leadershipArchitecture'].map((k) => [
+            k,
+            { type: new Schema({ score: Number, note: String }, { _id: false }) },
+          ]),
+        ),
+        { _id: false },
+      ),
+      default: undefined,
+    },
     analyzedAt: Date,
   },
   { _id: false },
