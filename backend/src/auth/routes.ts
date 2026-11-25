@@ -34,8 +34,8 @@ const isAdminEmail = (email: string) => !!env.ADMIN_EMAIL && email.toLowerCase()
  * ADMIN_EMAIL first become admin. Without Google, use `npm run make-admin <email>` on the server.
  */
 
-function startSession(res: Response, userId: string) {
-  res.cookie(SESSION_COOKIE, signSession(userId), sessionCookieOptions);
+function startSession(res: Response, user: { _id: unknown; sessionVersion: number }) {
+  res.cookie(SESSION_COOKIE, signSession(String(user._id), user.sessionVersion), sessionCookieOptions);
 }
 
 export function authRouter(google: GoogleVerifier): Router {
@@ -52,7 +52,7 @@ export function authRouter(google: GoogleVerifier): Router {
       passwordHash: await bcrypt.hash(body.password, 10),
       role: 'user',
     });
-    startSession(res, String(user._id));
+    startSession(res, user);
     res.status(201).json(publicUser(user));
   });
 
@@ -63,7 +63,7 @@ export function authRouter(google: GoogleVerifier): Router {
     if (!user?.passwordHash || !(await bcrypt.compare(body.password, user.passwordHash))) {
       throw new HttpError(401, 'Invalid email or password');
     }
-    startSession(res, String(user._id));
+    startSession(res, user);
     res.json(publicUser(user));
   });
 
@@ -91,11 +91,12 @@ export function authRouter(google: GoogleVerifier): Router {
       // (via Google) keeps access. This blocks "pre-hijacking" of accounts.
       user.googleId = profile.sub;
       user.passwordHash = undefined;
+      user.sessionVersion += 1; // log out every session created with the old (unverified) password
       user.avatarUrl ??= profile.picture;
     }
     if (isAdminEmail(email)) user.role = 'admin';
     if (user.isModified()) await user.save();
-    startSession(res, String(user._id));
+    startSession(res, user);
     res.json(publicUser(user));
   });
 

@@ -25,7 +25,7 @@ const Body = z.object({
 
 const SAMPLE_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../sample-data');
 
-export function toPublicDoc(d: DocumentDoc) {
+export function toPublicDoc(d: Omit<DocumentDoc, 'rawText'>) {
   return {
     id: String(d._id),
     kind: d.kind,
@@ -61,7 +61,7 @@ export function documentsRouter(deps: AppDeps): Router {
     const docs = await DocumentModel.find({ userId: currentUser(req).id }, { rawText: 0 })
       .sort({ kind: -1, jobNumber: 1 }) // 'resume' > 'job' alphabetically → resume first
       .lean();
-    res.json(docs.map((d) => toPublicDoc(d as DocumentDoc)));
+    res.json(docs.map((d) => toPublicDoc(d)));
   });
 
   router.post('/', upload.single('file'), async (req, res) => {
@@ -87,7 +87,7 @@ export function documentsRouter(deps: AppDeps): Router {
       { userId: user.id, requestId: String(req.id) },
     );
     await notifyIngested(req, user.id, String(doc._id));
-    res.status(201).json(toPublicDoc(doc.toObject() as DocumentDoc));
+    res.status(201).json(toPublicDoc(doc.toObject() as unknown as DocumentDoc));
   });
 
   router.post('/sample', async (req, res) => {
@@ -100,7 +100,7 @@ export function documentsRouter(deps: AppDeps): Router {
       created.push(doc);
     }
     for (const d of created.filter((d) => d.kind === 'job')) await notifyIngested(req, user.id, String(d._id));
-    res.status(201).json(created.map((d) => toPublicDoc(d.toObject() as DocumentDoc)));
+    res.status(201).json(created.map((d) => toPublicDoc(d.toObject() as unknown as DocumentDoc)));
   });
 
   router.delete('/:id', async (req, res) => {

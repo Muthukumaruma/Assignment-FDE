@@ -8,6 +8,8 @@ const userSchema = new Schema(
     googleId: { type: String, index: { unique: true, sparse: true } },
     avatarUrl: { type: String },
     role: { type: String, enum: ['user', 'admin'], default: 'user', required: true },
+    /** Bumped whenever credentials change; tokens carrying an older version are rejected. */
+    sessionVersion: { type: Number, default: 0, required: true },
   },
   { timestamps: { createdAt: true, updatedAt: false } },
 );

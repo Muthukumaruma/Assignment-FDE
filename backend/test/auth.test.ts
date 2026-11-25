@@ -69,6 +69,13 @@ describe('auth', () => {
     expect(pw.status).toBe(401);
   });
 
+  it("kills a pre-hijacker's existing session when the real owner links Google (no inherited admin)", async () => {
+    const { agent: attacker } = await registerAndLogin(app, 'admin@example.com');
+    const owner = await request(app).post('/api/auth/google').send({ credential: google({ sub: 'g-adm', email: 'admin@example.com' }) });
+    expect(owner.body.role).toBe('admin');
+    expect((await attacker.get('/api/auth/me')).status).toBe(401);
+  });
+
   it('refuses google sign-in when the account is already linked to a different Google id', async () => {
     await request(app).post('/api/auth/google').send({ credential: google({ sub: 'g-1' }) });
     const res = await request(app).post('/api/auth/google').send({ credential: google({ sub: 'g-OTHER' }) });

@@ -23,9 +23,10 @@ declare module 'express-serve-static-core' {
  */
 export async function requireAuth(req: Request, _res: Response, next: NextFunction): Promise<void> {
   try {
-    const userId = verifySession(req.cookies?.[SESSION_COOKIE]);
-    const user = userId ? await User.findById(userId).lean() : null;
-    if (!user) throw new HttpError(401, 'Not signed in');
+    const session = verifySession(req.cookies?.[SESSION_COOKIE]);
+    const user = session ? await User.findById(session.userId).lean() : null;
+    // A stale sessionVersion means credentials changed after this token was issued.
+    if (!user || user.sessionVersion !== session?.sessionVersion) throw new HttpError(401, 'Not signed in');
     req.user = { id: String(user._id), email: user.email, name: user.name, role: user.role as Role };
     next();
   } catch (err) {
