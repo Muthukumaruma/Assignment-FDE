@@ -27,8 +27,11 @@ server {
     add_header Cache-Control "public, immutable";
   }
 
-  # SPA fallback for client-side routes (/login, /admin).
+  # SPA fallback for client-side routes (/login, /admin). index.html must never be cached:
+  # after a redeploy, a cached copy would point at hashed /assets/ files that no longer exist
+  # and the page would load blank. (Hashed assets above are immutable and cached for a year.)
   location / {
+    add_header Cache-Control "no-cache" always;
     try_files $uri /index.html;
   }
 }
