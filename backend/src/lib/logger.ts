@@ -3,6 +3,6 @@ import { env } from '../config/env.js';
 
 export const logger = pino({
   level: env.LOG_LEVEL,
-  redact: ['req.headers.cookie', 'req.headers.authorization', 'res.headers["set-cookie"]'],
+  redact: ['req.headers.cookie', 'req.headers.authorization', 'req.headers["x-proxy-auth"]', 'res.headers["set-cookie"]'],
   ...(env.NODE_ENV === 'development' ? { transport: { target: 'pino-pretty' } } : {}),
 });
