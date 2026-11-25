@@ -46,6 +46,10 @@ const documentSchema = new Schema(
   { timestamps: { createdAt: true, updatedAt: false } },
 );
 
-export type DocumentDoc = InferSchemaType<typeof documentSchema> & { _id: Types.ObjectId };
+// "Job #N" must be unique per user: concurrent uploads that race for the same N get a
+// duplicate-key error and retry with the next number (see ingestDocument).
+documentSchema.index({ userId: 1, jobNumber: 1 }, { unique: true, partialFilterExpression: { kind: 'job' } });
+
+export type DocumentDoc =InferSchemaType<typeof documentSchema> & { _id: Types.ObjectId };
 // "Document" collides with the DOM global name in some tooling, hence DocumentModel.
 export const DocumentModel = model('Document', documentSchema);

@@ -11,7 +11,7 @@ import { atsChecks } from '../resume/ats.js';
 import { currentUser, requireAuth } from '../auth/middleware.js';
 import { env } from '../config/env.js';
 import { extractText } from '../ingest/extract.js';
-import { deleteDocuments, ingestDocument } from '../ingest/service.js';
+import { deleteDocuments, ingestDocument, MAX_JOBS } from '../ingest/service.js';
 import { HttpError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
 import { DocumentModel, type DocumentDoc } from '../models/Document.js';
@@ -54,9 +54,6 @@ function titleFromText(text: string): { title: string; company?: string } {
   const [title, company] = first.split(/\s{1,3}[—–-]\s{1,3}/);
   return { title: title.trim().slice(0, 200) || 'Untitled', company: company?.trim().slice(0, 200) || undefined };
 }
-
-/** Most jobs a user can compare at once: bounds storage and the cost of re-scoring on resume change. */
-export const MAX_JOBS = 10;
 
 export function documentsRouter(deps: AppDeps, opts: { costLimitPerWindow?: number } = {}): Router {
   const router = Router();

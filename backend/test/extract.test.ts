@@ -27,3 +27,14 @@ describe('extractText PDFs', () => {
     expect(text).not.toMatch(/-- \d+ of \d+ --/);
   });
 });
+
+describe('page-marker stripping performance', () => {
+  it('is fast on huge whitespace runs', async () => {
+    const { stripPageMarkers } = await import('../src/ingest/extract.js');
+    const evil = ` ${'\n'.repeat(100_000)}x`;
+    const t0 = Date.now();
+    stripPageMarkers(evil);
+    expect(Date.now() - t0).toBeLessThan(300);
+    expect(stripPageMarkers('a\n-- 1 of 2 --\nb')).toBe('a\n\nb');
+  });
+});

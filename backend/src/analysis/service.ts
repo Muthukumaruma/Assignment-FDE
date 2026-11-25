@@ -66,8 +66,16 @@ export async function analyzeJob(userId: string, jobId: string, llm: LlmClient, 
     'fit_analysis',
     ctx,
   );
-  job.set({ analysis: { ...analysis, analyzedAt: new Date() }, analysisStale: false });
-  await job.save();
+  // The LLM call takes seconds. If the resume was replaced meanwhile, this score describes a
+  // resume that no longer exists: don't save it (the new resume's upload re-scores every job).
+  if (!(await DocumentModel.exists({ _id: resume._id, userId }))) {
+    logger.info({ jobId, requestId: ctx.requestId }, 'resume replaced during analysis; result discarded');
+    return analysis;
+  }
+  await DocumentModel.updateOne(
+    { _id: jobId, userId },
+    { $set: { analysis: { ...analysis, analyzedAt: new Date() }, analysisStale: false } },
+  );
   return analysis;
 }
 

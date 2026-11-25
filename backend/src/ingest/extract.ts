@@ -3,6 +3,11 @@ import mammoth from 'mammoth';
 import { PDFParse } from 'pdf-parse';
 import { HttpError } from '../lib/errors.js';
 
+/** Removes "-- 1 of 2 --" page-marker lines. [ \t] (not \s) so a match can never span lines. */
+export function stripPageMarkers(text: string): string {
+  return text.replace(/^[ \t]{0,10}-- \d{1,5} of \d{1,5} --[ \t]{0,10}$/gm, '');
+}
+
 export const SUPPORTED_EXTENSIONS = ['.pdf', '.docx', '.txt', '.md'];
 
 /** Turns an uploaded file into plain text. Decides by extension first (browsers send unreliable MIME types). */
@@ -15,7 +20,7 @@ export async function extractText(buf: Buffer, mime: string, filename: string): 
       // scanned (text-less) PDF look non-empty and leak into chunks and citations, so join with
       // a newline instead, and strip any marker lines defensively.
       const { text } = await parser.getText({ pageJoiner: '\n' });
-      return text.replace(/^\s*-- \d+ of \d+ --\s*$/gm, '');
+      return stripPageMarkers(text);
     } finally {
       await parser.destroy();
     }

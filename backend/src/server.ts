@@ -12,7 +12,12 @@ import { createR2FileStore } from './storage/r2.js';
 import type { AppDeps } from './types.js';
 
 await connectDb(env.MONGODB_URI, env.MONGODB_DB);
-await Promise.all(Object.values(mongoose.models).map((m) => m.createIndexes()));
+// Index problems (e.g. legacy duplicates) must not take the API down: log and keep serving.
+await Promise.all(
+  Object.values(mongoose.models).map((m) =>
+    m.createIndexes().catch((err) => logger.warn({ err, model: m.modelName }, 'index creation failed')),
+  ),
+);
 await ensureVectorIndex();
 
 const llm = createOpenAiClient({ apiKey: env.OPENAI_API_KEY, chatModel: env.OPENAI_CHAT_MODEL, embedModel: env.OPENAI_EMBED_MODEL });
