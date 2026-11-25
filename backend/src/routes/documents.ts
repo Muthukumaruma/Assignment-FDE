@@ -74,20 +74,29 @@ export function documentsRouter(deps: AppDeps): Router {
     const user = currentUser(req);
     const body = Body.parse(req.body);
     let text = body.text ?? '';
-    let fallbackTitle: string | undefined;
+    let fileName: string | undefined;
     if (req.file) {
       text = await extractText(req.file.buffer, req.file.mimetype, req.file.originalname);
-      fallbackTitle = path.parse(req.file.originalname).name;
+      fileName = path.parse(req.file.originalname).name;
     }
     if (text.length > MAX_TEXT_CHARS) throw new HttpError(413, 'Document too large (max 200,000 characters of text)');
-    if (!text.trim()) throw new HttpError(422, 'No extractable text');
+    if (!text.trim()) {
+      throw new HttpError(
+        422,
+        req.file
+          ? 'No extractable text. If this is a scanned PDF, export it as a text PDF or use "Paste text".'
+          : 'No extractable text',
+      );
+    }
+    // The document's own first line ("Data Engineer — Foo Corp", or the candidate's name) beats
+    // a filename like "jd_final_v3"; the filename is only a fallback.
     const guessed = titleFromText(text);
     const doc = await ingestDocument(
       {
         userId: user.id,
         kind: body.kind,
-        title: body.title || fallbackTitle || guessed.title,
-        company: body.company || (req.file ? undefined : guessed.company),
+        title: body.title || (guessed.title !== 'Untitled' ? guessed.title : fileName) || 'Untitled',
+        company: body.company || guessed.company,
         text,
       },
       deps.llm,

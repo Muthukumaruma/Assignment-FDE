@@ -39,7 +39,13 @@ describe('documents API', () => {
     const { agent } = await registerAndLogin(app, 'f@x.com');
     const res = await agent.post('/api/documents').field('kind', 'resume').attach('file', Buffer.from(RESUME), 'cv.txt');
     expect(res.status).toBe(201);
-    expect(res.body).toMatchObject({ kind: 'resume', label: 'Resume', title: 'cv' });
+    expect(res.body).toMatchObject({ kind: 'resume', label: 'Resume', title: 'Jane Doe' });
+  });
+
+  it('uploaded files take title and company from the first line, not the filename', async () => {
+    const { agent } = await registerAndLogin(app, 'title@x.com');
+    const res = await agent.post('/api/documents').field('kind', 'job').attach('file', Buffer.from('Data Engineer — Foo Corp\nRequirements\nSpark'), 'jd_final_v3.txt');
+    expect(res.body).toMatchObject({ title: 'Data Engineer', company: 'Foo Corp' });
   });
 
   it('a new resume replaces the old one and marks job analyses stale', async () => {

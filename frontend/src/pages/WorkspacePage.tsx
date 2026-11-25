@@ -63,7 +63,7 @@ export default function WorkspacePage() {
   return (
     <div className="relative grid h-dvh grid-cols-1 lg:grid-cols-[320px_1fr]">
       <Background />
-      <div className={`fixed inset-y-0 left-0 z-20 w-[320px] transition-transform lg:static lg:translate-x-0 ${navOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className={`fixed inset-y-0 left-0 z-20 h-dvh w-[320px] transition-transform lg:static lg:min-h-0 lg:translate-x-0 ${navOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <Sidebar
           docs={docs}
           loading={loading}
