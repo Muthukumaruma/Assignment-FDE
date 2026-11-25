@@ -50,3 +50,13 @@ describe('prompt budget and sanitising', () => {
     expect(out.match(/<\/documents_index>/g)).toHaveLength(1);
   });
 });
+
+describe('citation reinforcement', () => {
+  it('ends the final user message with a citation reminder (recency helps instruction-following)', () => {
+    const msgs = buildMessages(base);
+    expect(msgs[msgs.length - 1].content.trimEnd()).toMatch(/cite.*\[Label › Section\][^\n]*$/i);
+  });
+  it('includes a worked example of a cited answer in the system prompt', () => {
+    expect(buildMessages(base)[0].content).toMatch(/Example/);
+  });
+});
