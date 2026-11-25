@@ -8,6 +8,7 @@ import { env } from './config/env.js';
 import { errorHandler } from './lib/errors.js';
 import { logger } from './lib/logger.js';
 import { authRouter } from './auth/routes.js';
+import { adminRouter, metricsRouter } from './routes/admin.js';
 import { chatRouter } from './routes/chat.js';
 import { documentsRouter } from './routes/documents.js';
 import { healthRouter } from './routes/health.js';
@@ -37,6 +38,8 @@ export function createApp(deps: AppDeps): Express {
   app.use('/api/auth', authRouter(deps.google));
   app.use('/api/documents', documentsRouter(deps));
   app.use('/api/chat', chatRouter(deps));
+  app.use('/api/admin', adminRouter());
+  app.use('/api/metrics', metricsRouter());
 
   app.use((_req, res) => {
     res.status(404).json({ error: 'Not found' });
