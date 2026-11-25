@@ -9,6 +9,8 @@
  */
 interface Env {
   API_ORIGIN: string;
+  /** Same value as the API's PROXY_SECRET: proves the request came through this proxy. */
+  PROXY_SECRET?: string;
 }
 
 interface Context {
@@ -24,8 +26,12 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   headers.delete('host');
   headers.set('x-forwarded-host', url.host);
   headers.set('x-forwarded-proto', url.protocol.replace(':', ''));
-  const clientIp = request.headers.get('cf-connecting-ip');
+  // Never pass on client-supplied values for these: the API trusts them only because we set them.
+  headers.delete('x-proxy-auth');
+  headers.delete('x-forwarded-for');
+  const clientIp = request.headers.get('cf-connecting-ip'); // set by Cloudflare, not spoofable
   if (clientIp) headers.set('x-forwarded-for', clientIp);
+  if (env.PROXY_SECRET) headers.set('x-proxy-auth', env.PROXY_SECRET);
 
   const hasBody = !['GET', 'HEAD'].includes(request.method);
   try {

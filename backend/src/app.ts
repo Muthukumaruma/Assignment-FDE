@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { randomUUID, timingSafeEqual } from 'node:crypto';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { type Express } from 'express';
@@ -14,7 +14,24 @@ import { documentsRouter } from './routes/documents.js';
 import { healthRouter } from './routes/health.js';
 import type { AppDeps } from './types.js';
 
-export function createApp(deps: AppDeps): Express {
+/** Constant-time comparison so the secret can't be guessed byte by byte from response timing. */
+function sameSecret(given: string | undefined, expected: string): boolean {
+  if (!given) return false;
+  const a = Buffer.from(given);
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
+export interface AppOptions {
+  /**
+   * When set, every /api request except the health check must carry `x-proxy-auth: <secret>`.
+   * Used when the API sits behind the Cloudflare Pages proxy: the API then only accepts traffic
+   * through the proxy, so the client IP that the proxy forwards can be trusted for rate limiting.
+   */
+  proxySecret?: string;
+}
+
+export function createApp(deps: AppDeps, opts: AppOptions = { proxySecret: env.PROXY_SECRET || undefined }): Express {
   const app = express();
   app.disable('x-powered-by');
   // Correct client IPs (for rate limiting) depend on how many proxies sit in front of us.
@@ -36,6 +53,13 @@ export function createApp(deps: AppDeps): Express {
   app.use(express.json({ limit: '1mb' }));
 
   app.use('/api/health', healthRouter);
+  if (opts.proxySecret) {
+    const secret = opts.proxySecret;
+    app.use('/api', (req, res, next) => {
+      if (sameSecret(req.get('x-proxy-auth'), secret)) return next();
+      res.status(403).json({ error: 'Direct access is not allowed' });
+    });
+  }
   app.use('/api/auth', authRouter(deps.google));
   app.use('/api/documents', documentsRouter(deps));
   app.use('/api/chat', chatRouter(deps));

@@ -19,8 +19,13 @@ services:
         value: gpt-4o-mini
       - key: OPENAI_EMBED_MODEL
         value: text-embedding-3-small
+      # Behind Cloudflare Pages + Render's router. Safe ONLY together with PROXY_SECRET:
+      # the API rejects requests that did not come through the Pages proxy, so the client IP
+      # the proxy forwards (from cf-connecting-ip) cannot be spoofed by direct callers.
       - key: TRUST_PROXY_HOPS
         value: '2'
+      - key: PROXY_SECRET
+        sync: false
       - key: JWT_SECRET
         generateValue: true
       - key: MONGODB_URI

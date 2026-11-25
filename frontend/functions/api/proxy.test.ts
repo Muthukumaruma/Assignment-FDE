@@ -43,3 +43,18 @@ describe('Pages Function /api proxy', () => {
     vi.unstubAllGlobals();
   });
 });
+
+describe('proxy authentication to the API', () => {
+  it('adds the shared secret and overrides any client-supplied copy or forwarded-for header', async () => {
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => new Response('{}'));
+    vi.stubGlobal('fetch', fetchMock);
+    const request = new Request('https://careerlens.pages.dev/api/auth/me', {
+      headers: { 'x-proxy-auth': 'forged', 'x-forwarded-for': '6.6.6.6', 'cf-connecting-ip': '1.2.3.4' },
+    });
+    await onRequest({ request, env: { API_ORIGIN: 'https://api.example', PROXY_SECRET: 'real-secret' } } as never);
+    const h = new Headers(fetchMock.mock.calls[0][1]?.headers);
+    expect(h.get('x-proxy-auth')).toBe('real-secret');
+    expect(h.get('x-forwarded-for')).toBe('1.2.3.4');
+    vi.unstubAllGlobals();
+  });
+});

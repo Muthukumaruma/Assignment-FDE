@@ -40,9 +40,12 @@ Render and Cloudflare Pages both deploy from a Git repository.
    | `ADMIN_EMAIL` | the Google account that should be admin |
    | `CORS_ORIGIN` | `https://<your-project>.pages.dev` |
    | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | from step 1 |
-   `JWT_SECRET` is generated automatically, and `TRUST_PROXY_HOPS=2` is preset (Cloudflare + Render).
+   | `PROXY_SECRET` | a long random string (e.g. `openssl rand -hex 32`); the **same value** goes into Pages in step 3 |
+   `JWT_SECRET` is generated automatically. `TRUST_PROXY_HOPS=2` is preset; it is safe only because `PROXY_SECRET`
+   makes the API reject anything that did not come through the Pages proxy (so nobody can fake their IP to dodge rate limits).
 3. Atlas → **Network Access** → allow Render's outbound IPs (or `0.0.0.0/0` for a demo).
 4. Wait for the deploy, then open `https://careerlens-api.onrender.com/api/health` and check for `{"status":"ok"}`.
+   Any other path on the Render URL returns 403 ("Direct access is not allowed"), which is expected.
 
 ## 3. Cloudflare Pages (frontend + proxy)
 1. Cloudflare dashboard → **Workers & Pages → Create → Pages → Connect to Git** → select the repo.
@@ -56,6 +59,7 @@ Render and Cloudflare Pages both deploy from a Git repository.
    | Key | Value |
    |---|---|
    | `API_ORIGIN` | `https://careerlens-api.onrender.com` (your Render URL) |
+   | `PROXY_SECRET` | the same value as on Render (mark it **Encrypt**) |
    | `VITE_GOOGLE_CLIENT_ID` | OAuth web client ID (optional; baked in at build time) |
 4. Deploy. The `functions/api/[[path]].ts` file is picked up automatically.
 

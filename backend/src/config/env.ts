@@ -16,6 +16,8 @@ const EnvSchema = z.object({
   LOG_LEVEL: z.string().default('info'),
   /** Reverse proxies in front of the API (nginx = 1; Cloudflare Pages Function + Render = 2). */
   TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(1),
+  /** Shared secret the Cloudflare Pages proxy sends as x-proxy-auth. Empty = not enforced. */
+  PROXY_SECRET: z.string().default(''),
   // Cloudflare R2 (optional). When unset, original files are not kept.
   R2_ACCOUNT_ID: z.string().default(''),
   R2_ACCESS_KEY_ID: z.string().default(''),

@@ -13,7 +13,7 @@ Built for the Newpage Solutions AI FDE assignment (Option 4: Career Intelligence
 | ![](docs/screenshots/01-login.png) | ![](docs/screenshots/04-fit-drawer.png) | ![](docs/screenshots/05-admin.png) |
 
 **Stack:** MongoDB Atlas (documents and vector search), Express + TypeScript, React 19 + Vite + Tailwind v4, OpenAI.
-**Tests:** 93 backend + 26 frontend. **Eval:** 12-question golden set run against the real model.
+**Tests:** 97 backend + 27 frontend. **Eval:** 12-question golden set run against the real model.
 
 ---
 
