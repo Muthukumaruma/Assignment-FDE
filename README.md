@@ -49,9 +49,9 @@ docker compose up --build   # http://localhost:8080 (nginx serves the SPA and pr
 No Atlas account? Set `MONGODB_URI=mongodb://mongo:27017/?directConnection=true` in `backend/.env` and
 run `docker compose --profile local-db up --build`. This uses MongoDB's `atlas-local` image, which includes Vector Search.
 
-### Deploy (Cloudflare Pages + R2, API on Render)
+### Deploy (Cloudflare Pages + R2, API on Northflank)
 Step-by-step guide: [docs/deploy-cloudflare.md](docs/deploy-cloudflare.md). Cloudflare Pages serves the SPA, and a Pages
-Function proxies `/api/*` to the API container on Render, so the browser sees one origin. Original uploads are kept
+Function proxies `/api/*` to the API container on Northflank (Render also documented), so the browser sees one origin. Original uploads are kept
 in a private Cloudflare R2 bucket.
 
 ### Google sign-in (optional)
