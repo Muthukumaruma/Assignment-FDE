@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { RefreshCw, X } from 'lucide-react';
+import { Download, RefreshCw, X } from 'lucide-react';
 import { useState } from 'react';
 import { api } from '../api/client';
 import type { Doc } from '../types';
@@ -70,6 +70,15 @@ export default function FitDrawer({ doc, hasResume, onClose, onChanged, onAsk }:
                 <p className="text-sm text-sage">{doc.label}</p>
                 <h2 className="text-2xl leading-tight font-bold text-mint">{doc.title}</h2>
                 {doc.company && <p className="text-sage">{doc.company}</p>}
+                {doc.hasFile && (
+                  <a
+                    href={`/api/documents/${doc.id}/file`}
+                    download
+                    className="mt-1.5 inline-flex items-center gap-1.5 text-sm text-emerald hover:text-lime"
+                  >
+                    <Download size={14} /> Download {doc.fileName ?? 'original'}
+                  </a>
+                )}
               </div>
               <button type="button" onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 text-sage hover:bg-moss hover:text-mint">
                 <X size={18} />

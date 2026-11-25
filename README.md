@@ -13,7 +13,7 @@ Built for the Newpage Solutions AI FDE assignment (Option 4: Career Intelligence
 | ![](docs/screenshots/01-login.png) | ![](docs/screenshots/04-fit-drawer.png) | ![](docs/screenshots/05-admin.png) |
 
 **Stack:** MongoDB Atlas (documents and vector search), Express + TypeScript, React 19 + Vite + Tailwind v4, OpenAI.
-**Tests:** 87 backend + 17 frontend. **Eval:** 12-question golden set run against the real model.
+**Tests:** 93 backend + 26 frontend. **Eval:** 12-question golden set run against the real model.
 
 ---
 
@@ -45,6 +45,11 @@ docker compose up --build   # http://localhost:8080 (nginx serves the SPA and pr
 No Atlas account? Set `MONGODB_URI=mongodb://mongo:27017/?directConnection=true` in `backend/.env` and
 run `docker compose --profile local-db up --build`. This uses MongoDB's `atlas-local` image, which includes Vector Search.
 
+### Deploy (Cloudflare Pages + R2, API on Render)
+Step-by-step guide: [docs/deploy-cloudflare.md](docs/deploy-cloudflare.md). Cloudflare Pages serves the SPA, and a Pages
+Function proxies `/api/*` to the API container on Render, so the browser sees one origin. Original uploads are kept
+in a private Cloudflare R2 bucket.
+
 ### Google sign-in (optional)
 In Google Cloud Console, open *APIs & Services → Credentials → OAuth client ID (Web)*. Add `http://localhost:5190` and
 `http://localhost:8080` as authorised JavaScript origins. Put the client ID in `backend/.env` (`GOOGLE_CLIENT_ID`) and
@@ -73,6 +78,7 @@ flowchart LR
 ```
 
 - **Ingest:** extract text (pdf-parse / mammoth) → split by section → embed → store chunks with `userId`, `docId`, label and section.
+  The original file goes to Cloudflare R2 (`users/{userId}/{docId}.pdf`, private, downloadable only by its owner) when `R2_*` is configured.
   Adding a job, or replacing the resume, triggers a background **fit analysis** (one structured-output call per job).
 - **Chat:** guard → route ("Job #2", title or company) → retrieve → prompt → stream over SSE → citation filter → trace.
 - **Auth:** email/password (bcrypt) or Google ID token → our own JWT in an httpOnly cookie; roles `user` / `admin`.
@@ -196,8 +202,8 @@ Facts you can draw on:
 
 **Followed**
 - TypeScript `strict` on both sides; environment validated with zod at startup (fails fast).
-- Tests written first: 87 backend tests (chunker, router, prompt, guardrails, auth/RBAC, tenant isolation, SSE chat, admin)
-  and 17 frontend tests (login, chat streaming, citations, fit ring, admin, markdown sanitising).
+- Tests written first: 93 backend tests (chunker, router, prompt, guardrails, auth/RBAC, tenant isolation, SSE chat, admin)
+  and 26 frontend tests (login, chat streaming, citations, fit ring, admin, uploads, markdown sanitising, Pages proxy).
 - External services behind interfaces (`LlmClient`, `Retriever`, `GoogleVerifier`) and injected into `createApp`.
 - Small, single-purpose modules; comments explain *why*, not *what*.
 - Central error handler; errors are user-readable and never leak stack traces.

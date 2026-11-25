@@ -17,7 +17,8 @@ import type { AppDeps } from './types.js';
 export function createApp(deps: AppDeps): Express {
   const app = express();
   app.disable('x-powered-by');
-  app.set('trust proxy', 1);
+  // Correct client IPs (for rate limiting) depend on how many proxies sit in front of us.
+  app.set('trust proxy', env.TRUST_PROXY_HOPS);
 
   app.use(
     pinoHttp({

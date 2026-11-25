@@ -1,0 +1,8 @@
+# Cloudflare Pages project. Build: `npm run build` → dist/. Functions in ./functions (the /api proxy).
+name = "careerlens"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-05-01"
+
+[vars]
+# Overridden per environment in the Pages dashboard (Settings → Variables).
+API_ORIGIN = "https://careerlens-api.onrender.com"

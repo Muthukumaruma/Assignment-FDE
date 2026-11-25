@@ -14,6 +14,8 @@ const EnvSchema = z.object({
   ADMIN_EMAIL: z.string().default(''),
   CORS_ORIGIN: z.string().default('http://localhost:5190'),
   LOG_LEVEL: z.string().default('info'),
+  /** Reverse proxies in front of the API (nginx = 1; Cloudflare Pages Function + Render = 2). */
+  TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(1),
   // Cloudflare R2 (optional). When unset, original files are not kept.
   R2_ACCOUNT_ID: z.string().default(''),
   R2_ACCESS_KEY_ID: z.string().default(''),

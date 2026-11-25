@@ -26,6 +26,9 @@ export interface Doc {
   company?: string;
   analysis?: FitAnalysis;
   analysisStale: boolean;
+  /** True when the original upload is kept in object storage (Cloudflare R2). */
+  hasFile?: boolean;
+  fileName?: string;
   createdAt: string;
 }
 
