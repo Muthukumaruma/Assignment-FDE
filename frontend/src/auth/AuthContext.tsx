@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { api } from '../api/client';
+import { ApiError, api } from '../api/client';
 import type { User } from '../types';
 
 interface AuthState {
@@ -13,17 +13,41 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+/** Waits between retries of the session check: ~15 s in total covers a redeploy or a free-tier cold start. */
+const DEFAULT_RETRY_DELAYS_MS = [1000, 2000, 4000, 8000];
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+export function AuthProvider({ children, retryDelaysMs = DEFAULT_RETRY_DELAYS_MS }: { children: ReactNode; retryDelaysMs?: number[] }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api
-      .get<User>('/api/auth/me')
-      .then(setUser)
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false));
-  }, []);
+    let cancelled = false;
+    // Only a 401 means "signed out". A 5xx or network error means the API is restarting
+    // (redeploy, cold start); treating that as signed out would log people out on every deploy.
+    (async () => {
+      for (let attempt = 0; ; attempt += 1) {
+        try {
+          const me = await api.get<User>('/api/auth/me');
+          if (!cancelled) setUser(me);
+          break;
+        } catch (err) {
+          const signedOut = err instanceof ApiError && err.status === 401;
+          if (signedOut || attempt >= retryDelaysMs.length) {
+            if (!cancelled) setUser(null);
+            break;
+          }
+          await sleep(retryDelaysMs[attempt]);
+          if (cancelled) return;
+        }
+      }
+      if (!cancelled) setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [retryDelaysMs]);
 
   const login = useCallback(async (email: string, password: string) => {
     setUser(await api.post<User>('/api/auth/login', { email, password }));
