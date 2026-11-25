@@ -19,7 +19,10 @@ describe('requireRole', () => {
 
   it('returns 403 for a normal user and 200 for an admin', async () => {
     const { cookie: userCookie } = await registerAndLogin(app, 'u@x.com');
-    const { cookie: adminCookie } = await registerAndLogin(app, 'admin@example.com');
+    const adminRes = await request(app).post('/api/auth/google').send({
+      credential: JSON.stringify({ sub: 'g-a', email: 'admin@example.com', name: 'Admin', emailVerified: true }),
+    });
+    const adminCookie = String(adminRes.headers['set-cookie']).split(';')[0];
     expect((await request(guarded).get('/admin-only').set('Cookie', userCookie)).status).toBe(403);
     expect((await request(guarded).get('/admin-only').set('Cookie', adminCookie)).status).toBe(200);
     expect((await request(guarded).get('/admin-only')).status).toBe(401);

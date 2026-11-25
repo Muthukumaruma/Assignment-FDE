@@ -25,9 +25,14 @@ describe('auth', () => {
     expect(me.body.passwordHash).toBeUndefined();
   });
 
-  it('gives the ADMIN_EMAIL account the admin role', async () => {
+  it('does NOT grant admin to a password registration of ADMIN_EMAIL (email is unverified)', async () => {
     const { user } = await registerAndLogin(app, 'admin@example.com');
-    expect(user.role).toBe('admin');
+    expect(user.role).toBe('user');
+  });
+
+  it('grants admin to ADMIN_EMAIL only via Google with a verified email', async () => {
+    const res = await request(app).post('/api/auth/google').send({ credential: google({ sub: 'g-admin', email: 'admin@example.com' }) });
+    expect(res.body.role).toBe('admin');
   });
 
   it('rejects duplicate registration with 409 and short passwords with 400', async () => {
@@ -54,11 +59,20 @@ describe('auth', () => {
     expect(u?.googleId).toBe('g-1');
   });
 
-  it('google sign-in links to an existing password account with the same email', async () => {
+  it('google sign-in links to an existing password account and invalidates the unverified password', async () => {
+    // Pre-hijack scenario: someone registered g@x.com with a password before the real owner used Google.
     const { user } = await registerAndLogin(app, 'g@x.com');
     const res = await request(app).post('/api/auth/google').send({ credential: google({}) });
     expect(res.body.id).toBe(user.id);
     expect(await User.countDocuments({ email: 'g@x.com' })).toBe(1);
+    const pw = await request(app).post('/api/auth/login').send({ email: 'g@x.com', password: 'password123' });
+    expect(pw.status).toBe(401);
+  });
+
+  it('refuses google sign-in when the account is already linked to a different Google id', async () => {
+    await request(app).post('/api/auth/google').send({ credential: google({ sub: 'g-1' }) });
+    const res = await request(app).post('/api/auth/google').send({ credential: google({ sub: 'g-OTHER' }) });
+    expect(res.status).toBe(401);
   });
 
   it('google sign-in with an unverified email is rejected', async () => {

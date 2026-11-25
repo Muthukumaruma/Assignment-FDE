@@ -28,14 +28,11 @@ const publicUser = (u: UserLike) => ({
 
 const isAdminEmail = (email: string) => !!env.ADMIN_EMAIL && email.toLowerCase() === env.ADMIN_EMAIL.toLowerCase();
 
-/** ADMIN_EMAIL bootstraps the first admin; afterwards admins manage roles in the UI. */
-async function promoteIfAdminEmail<T extends UserLike & { save(): Promise<unknown> }>(user: T): Promise<T> {
-  if (isAdminEmail(user.email) && user.role !== 'admin') {
-    user.role = 'admin';
-    await user.save();
-  }
-  return user;
-}
+/**
+ * ADMIN_EMAIL bootstraps the first admin, but ONLY through a provider-verified email (Google).
+ * Password sign-ups have no email verification, so trusting them would let anyone who registers
+ * ADMIN_EMAIL first become admin. Without Google, use `npm run make-admin <email>` on the server.
+ */
 
 function startSession(res: Response, userId: string) {
   res.cookie(SESSION_COOKIE, signSession(userId), sessionCookieOptions);
@@ -53,7 +50,7 @@ export function authRouter(google: GoogleVerifier): Router {
       email,
       name: body.name,
       passwordHash: await bcrypt.hash(body.password, 10),
-      role: isAdminEmail(email) ? 'admin' : 'user',
+      role: 'user',
     });
     startSession(res, String(user._id));
     res.status(201).json(publicUser(user));
@@ -66,7 +63,6 @@ export function authRouter(google: GoogleVerifier): Router {
     if (!user?.passwordHash || !(await bcrypt.compare(body.password, user.passwordHash))) {
       throw new HttpError(401, 'Invalid email or password');
     }
-    await promoteIfAdminEmail(user);
     startSession(res, String(user._id));
     res.json(publicUser(user));
   });
@@ -77,8 +73,10 @@ export function authRouter(google: GoogleVerifier): Router {
     if (!profile.emailVerified) throw new HttpError(401, 'Google account email is not verified');
     const email = profile.email.toLowerCase();
 
-    // Link by verified email so a password user who later clicks "Sign in with Google" keeps their data.
     let user = await User.findOne({ $or: [{ googleId: profile.sub }, { email }] });
+    if (user?.googleId && user.googleId !== profile.sub) {
+      throw new HttpError(401, 'This email is linked to a different Google account');
+    }
     if (!user) {
       user = await User.create({
         email,
@@ -87,12 +85,16 @@ export function authRouter(google: GoogleVerifier): Router {
         avatarUrl: profile.picture,
         role: isAdminEmail(email) ? 'admin' : 'user',
       });
-    } else if (!user.googleId || !user.avatarUrl) {
-      user.googleId ??= profile.sub;
+    } else if (!user.googleId) {
+      // Linking Google to an existing password account. We never verified that the password
+      // registrant owned this email, so their password is dropped: only the verified owner
+      // (via Google) keeps access. This blocks "pre-hijacking" of accounts.
+      user.googleId = profile.sub;
+      user.passwordHash = undefined;
       user.avatarUrl ??= profile.picture;
-      await user.save();
     }
-    await promoteIfAdminEmail(user);
+    if (isAdminEmail(email)) user.role = 'admin';
+    if (user.isModified()) await user.save();
     startSession(res, String(user._id));
     res.json(publicUser(user));
   });

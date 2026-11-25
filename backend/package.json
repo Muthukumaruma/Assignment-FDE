@@ -9,7 +9,8 @@
     "start": "node dist/server.js",
     "test": "vitest run",
     "lint": "tsc --noEmit",
-    "eval": "tsx eval/run.ts"
+    "eval": "tsx eval/run.ts",
+    "make-admin": "tsx scripts/make-admin.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
