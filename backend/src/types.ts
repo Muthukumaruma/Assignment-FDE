@@ -38,10 +38,19 @@ export interface GoogleVerifier {
   verify(credential: string): Promise<GoogleProfile>;
 }
 
+/** Object storage for original uploads (Cloudflare R2 in production). */
+export interface FileStore {
+  put(key: string, body: Buffer, contentType: string): Promise<void>;
+  get(key: string): Promise<{ body: Uint8Array; contentType: string } | null>;
+  delete(keys: string[]): Promise<void>;
+}
+
 export interface AppDeps {
   llm: LlmClient;
   retriever: Retriever;
   google: GoogleVerifier;
+  /** Optional: when absent, uploads are parsed but the original file is not kept. */
+  files?: FileStore;
   /** Called after a document is ingested (used to trigger fit analysis). Awaited in tests. */
   onIngested?: (userId: string, docId: string, requestId: string) => Promise<void>;
 }

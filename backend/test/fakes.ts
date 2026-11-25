@@ -43,3 +43,20 @@ export function fakeDeps(overrides: Partial<AppDeps> = {}): AppDeps {
     ...overrides,
   };
 }
+
+/** In-memory FileStore standing in for Cloudflare R2. */
+export function fakeFileStore() {
+  const objects = new Map<string, { body: Buffer; contentType: string }>();
+  return {
+    objects,
+    async put(key: string, body: Buffer, contentType: string) {
+      objects.set(key, { body, contentType });
+    },
+    async get(key: string) {
+      return objects.get(key) ?? null;
+    },
+    async delete(keys: string[]) {
+      for (const k of keys) objects.delete(k);
+    },
+  };
+}

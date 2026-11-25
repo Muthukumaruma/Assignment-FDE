@@ -14,6 +14,11 @@ const EnvSchema = z.object({
   ADMIN_EMAIL: z.string().default(''),
   CORS_ORIGIN: z.string().default('http://localhost:5190'),
   LOG_LEVEL: z.string().default('info'),
+  // Cloudflare R2 (optional). When unset, original files are not kept.
+  R2_ACCOUNT_ID: z.string().default(''),
+  R2_ACCESS_KEY_ID: z.string().default(''),
+  R2_SECRET_ACCESS_KEY: z.string().default(''),
+  R2_BUCKET: z.string().default(''),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

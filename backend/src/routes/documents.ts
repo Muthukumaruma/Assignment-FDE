@@ -35,6 +35,8 @@ export function toPublicDoc(d: Omit<DocumentDoc, 'rawText'>) {
     company: d.company ?? undefined,
     analysis: d.analysis ?? undefined,
     analysisStale: d.analysisStale,
+    hasFile: !!d.file?.key,
+    fileName: d.file?.name ?? undefined,
     createdAt: d.createdAt,
   };
 }
@@ -98,9 +100,11 @@ export function documentsRouter(deps: AppDeps): Router {
         title: body.title || (guessed.title !== 'Untitled' ? guessed.title : fileName) || 'Untitled',
         company: body.company || guessed.company,
         text,
+        file: req.file ? { buffer: req.file.buffer, name: req.file.originalname, mimeType: req.file.mimetype } : undefined,
       },
       deps.llm,
       { userId: user.id, requestId: String(req.id) },
+      deps.files,
     );
     await notifyIngested(req, user.id, String(doc._id));
     res.status(201).json(toPublicDoc(doc.toObject() as unknown as DocumentDoc));
@@ -134,8 +138,25 @@ export function documentsRouter(deps: AppDeps): Router {
     if (!isValidObjectId(id) || !(await DocumentModel.exists({ _id: id, userId: user.id }))) {
       throw new HttpError(404, 'Document not found');
     }
-    await deleteDocuments([id]);
+    await deleteDocuments([id], deps.files);
     res.status(204).end();
+  });
+
+  router.get('/:id/file', async (req, res) => {
+    const user = currentUser(req);
+    const id = String(req.params.id);
+    const doc = isValidObjectId(id) ? await DocumentModel.findOne({ _id: id, userId: user.id }, { file: 1 }).lean() : null;
+    const stored = doc?.file?.key && deps.files ? await deps.files.get(doc.file.key) : null;
+    if (!doc?.file || !stored) throw new HttpError(404, 'No original file for this document');
+    // Always a download (never rendered inline), with a sanitised filename: the file is user content.
+    const safeName = (doc.file.name ?? 'document').replace(/[^\w.\- ]/g, '_');
+    res.set({
+      'Content-Type': stored.contentType,
+      'Content-Disposition': `attachment; filename="${safeName}"`,
+      'X-Content-Type-Options': 'nosniff',
+      'Cache-Control': 'private, no-store',
+    });
+    res.send(Buffer.from(stored.body));
   });
 
   return router;

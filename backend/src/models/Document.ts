@@ -24,6 +24,11 @@ const documentSchema = new Schema(
     company: { type: String },
     rawText: { type: String, required: true },
     analysis: { type: analysisSchema, default: undefined },
+    /** Original upload in object storage (R2). Absent for pasted text or when storage is off. */
+    file: {
+      type: new Schema({ key: String, name: String, mimeType: String, size: Number }, { _id: false }),
+      default: undefined,
+    },
     analysisStale: { type: Boolean, default: false },
   },
   { timestamps: { createdAt: true, updatedAt: false } },
