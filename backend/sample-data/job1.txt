@@ -1,0 +1,22 @@
+Senior Frontend Engineer — Acme Analytics
+
+About the role
+Acme Analytics builds data visualisation tools used by 2,000+ enterprises. You will own the
+performance and quality of our React application.
+
+Responsibilities
+- Build complex, accessible UI components in React and TypeScript.
+- Own frontend performance: bundle size, rendering, Core Web Vitals.
+- Mentor engineers and drive frontend architecture decisions.
+- Collaborate with designers on a design system.
+
+Requirements
+- 5+ years of frontend development experience.
+- Expert in React, TypeScript and modern CSS (Tailwind or CSS-in-JS).
+- Experience with data visualisation libraries (D3.js, Recharts or similar).
+- Strong testing culture: Jest, React Testing Library, Playwright or Cypress.
+- Accessibility (WCAG 2.1) knowledge.
+
+Nice to have
+- Storybook and design-system experience.
+- WebGL or canvas rendering.

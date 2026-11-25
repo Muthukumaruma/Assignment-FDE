@@ -1,0 +1,21 @@
+Full-Stack MERN Developer — Brightcart
+
+About the role
+Brightcart is a fast-growing e-commerce platform. We are looking for a MERN developer to build
+features across our storefront and admin tools.
+
+Responsibilities
+- Build features end to end with MongoDB, Express, React and Node.js.
+- Design REST APIs and MongoDB schemas.
+- Write unit and integration tests.
+- Participate in code reviews and on-call rotation.
+
+Requirements
+- 3+ years with the MERN stack.
+- Solid understanding of MongoDB indexing and aggregation pipelines.
+- Experience with authentication (JWT, OAuth).
+- Familiarity with Docker and CI/CD pipelines.
+
+Nice to have
+- Payment gateway integration (Stripe, Razorpay).
+- Redis caching and message queues (RabbitMQ, Kafka).

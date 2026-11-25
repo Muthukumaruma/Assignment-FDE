@@ -1,0 +1,37 @@
+Alex Morgan
+Full-Stack Developer · Chennai, India · alex.morgan@example.com
+
+SUMMARY
+Full-stack developer with 5 years of experience building React and Node.js web applications.
+Comfortable owning features end to end, from MongoDB schema design to responsive UI.
+Recently started building small LLM-powered prototypes with the OpenAI API.
+
+SKILLS
+Languages: JavaScript, TypeScript, Python (basic), SQL
+Frontend: React, Redux, Next.js, Tailwind CSS, HTML5, CSS3, Jest, React Testing Library
+Backend: Node.js, Express, REST APIs, GraphQL (basic), JWT authentication
+Databases: MongoDB, PostgreSQL, Redis
+Cloud & DevOps: AWS (EC2, S3, Lambda), Docker, GitHub Actions, Nginx
+AI: OpenAI API, prompt engineering (hobby projects)
+
+EXPERIENCE
+Senior Software Engineer — Brightline Retail Tech (2022 – Present)
+- Led a team of 3 to rebuild the customer checkout in React + TypeScript, cutting page load by 40%.
+- Designed Node.js/Express microservices for order management handling 2M requests/day.
+- Introduced Docker-based local environments and GitHub Actions CI, reducing onboarding from 3 days to 4 hours.
+- Built an internal FAQ chatbot prototype using the OpenAI API (no retrieval, prompt-only).
+
+Software Engineer — Kaveri Infotech (2019 – 2022)
+- Built React dashboards for logistics clients; integrated Google Maps and real-time updates via WebSockets.
+- Wrote REST APIs in Express with MongoDB; added Redis caching to cut p95 latency from 900ms to 180ms.
+- Worked directly with client stakeholders to gather requirements and run UAT sessions.
+
+PROJECTS
+- ExpenseTracker: React + Tailwind personal finance app with charts and CSV export.
+- Recipe Finder: Next.js app using a public API, deployed on Vercel.
+
+EDUCATION
+B.E. Computer Science — Anna University, 2019
+
+CERTIFICATIONS
+AWS Certified Cloud Practitioner (2023)

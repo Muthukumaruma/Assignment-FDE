@@ -1,0 +1,22 @@
+AI Forward Deployed Engineer — Nimbus AI
+
+About the role
+Forward Deployed Engineers at Nimbus AI work on-site with enterprise customers to design,
+build and ship LLM-powered applications into production.
+
+What you'll do
+- Build retrieval-augmented generation (RAG) systems over customer documents.
+- Design prompts, guardrails and evaluation pipelines for LLM applications.
+- Integrate with customer systems (APIs, data warehouses, SSO).
+- Present technical solutions to customer engineering leaders.
+
+Requirements
+- 4+ years of software engineering experience with Python or TypeScript.
+- Hands-on experience building RAG pipelines: chunking, embeddings, vector databases (Pinecone, pgvector, Weaviate or MongoDB Atlas Vector Search).
+- Experience with LLM evaluation and observability tools (LangSmith, Langfuse, Ragas or similar).
+- Cloud deployment on AWS, GCP or Azure; Docker and Kubernetes.
+- Excellent communication skills and comfort in customer-facing roles.
+
+Nice to have
+- Fine-tuning or LoRA experience.
+- Experience with agent frameworks and tool calling.
