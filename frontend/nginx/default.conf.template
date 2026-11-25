@@ -1,15 +1,21 @@
+# nginx config TEMPLATE: the official nginx image substitutes ${API_UPSTREAM} and ${PROXY_SECRET}
+# from the container environment at startup (only variables that exist in the environment are
+# replaced, so nginx's own $host, $scheme, ... are left alone).
+#   API_UPSTREAM  backend host:port   docker compose: backend:4000   Northflank: <api-service-name>:4000
+#   PROXY_SECRET  must match the API's PROXY_SECRET when that is set (empty otherwise)
 server {
   listen 8080;
   root /usr/share/nginx/html;
 
   # Same-origin API: no CORS needed, and the session cookie stays first-party.
   location /api/ {
-    proxy_pass http://backend:4000;
+    proxy_pass http://${API_UPSTREAM};
     proxy_http_version 1.1;
     proxy_set_header Host $host;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
     proxy_set_header Connection "";
+    proxy_set_header x-proxy-auth "${PROXY_SECRET}";
     # Server-Sent Events: stream tokens as they arrive.
     proxy_buffering off;
     proxy_read_timeout 300s;

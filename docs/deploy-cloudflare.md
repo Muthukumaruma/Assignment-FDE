@@ -61,6 +61,20 @@ Northflank (or Render) and Cloudflare Pages both deploy from the GitHub reposito
 
 Use the Northflank URL as `API_ORIGIN` in step 3.
 
+## 2c. Frontend on Northflank too (instead of Cloudflare Pages)
+The frontend image is nginx serving the SPA and proxying `/api` to the API over Northflank's private network.
+1. **Create new → Service → Combined service** ("Build and deploy a Git repo"), same repo and branch.
+2. **Build options → Dockerfile:** build context `/frontend`, Dockerfile location **`/frontend/Dockerfile`**.
+3. **Build arguments (optional):** `VITE_GOOGLE_CLIENT_ID` for Google sign-in.
+4. **Ports:** `8080`, HTTP, **Publish publicly**. This URL is the app's public link.
+5. **Runtime variables:**
+   | Key | Value |
+   |---|---|
+   | `API_UPSTREAM` | `<api-service-name>:4000`, the API's internal address (Northflank → API service → Ports shows the private DNS name) |
+   | `PROXY_SECRET` | the same value as on the API service |
+6. On the **API service**: set `CORS_ORIGIN` to the frontend's public URL. The API's port can now be **private**
+   (untick *Publish publicly*): only the frontend needs to reach it. Keep `TRUST_PROXY_HOPS=2` (load balancer + nginx).
+
 ## 2b. Render (API) — alternative
 1. Render dashboard → **New → Blueprint** → select the GitHub repo. It reads [`render.yaml`](../render.yaml).
 2. Fill in the secrets it asks for:
