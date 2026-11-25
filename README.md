@@ -6,6 +6,9 @@ names the skills you're missing, and answers questions such as *"What am I missi
 
 Built for the Newpage Solutions AI FDE assignment (Option 4: Career Intelligence Assistant).
 
+**Live demo:** https://p01--frontend--g6dls6wx7pbl.code.run (Northflank; the free tier may take a few seconds to wake up).
+Create an account, then click **Try with sample data**.
+
 ![Chat with citations](docs/screenshots/03-chat-citations.png)
 
 | Sign in (email or Google) | Fit drawer | Admin and usage |
