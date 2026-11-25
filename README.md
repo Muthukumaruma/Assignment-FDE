@@ -117,7 +117,6 @@ frontend/src
 
 ## 3. RAG / LLM approach and decisions
 
-<!-- Facts and measurements below are accurate. Muthu: review the "why" wording and make it yours. -->
 
 | Concern | Options considered | Choice | Why |
 |---|---|---|---|
@@ -180,7 +179,6 @@ decisions (full-text vs. search, targeted jobs, missing refs, number of sources)
 
 ## 4. Productionising on a hyperscaler
 
-<!-- Muthu: this is a starting list. Keep the items you'd defend in an interview and add your own experience. -->
 
 | Area | Now | Production |
 |---|---|---|
@@ -199,18 +197,42 @@ decisions (full-text vs. search, targeted jobs, missing refs, number of sources)
 
 ## 5. Key technical decisions
 
-<!-- DRAFT: Muthu, rewrite this section in your own words (Newpage asked for your thinking, not an LLM's).
-Facts you can draw on:
-- MERN chosen because it's my stack; Atlas Vector Search keeps one database (no second vector store to sync).
-- Hand-written RAG instead of LangChain: explainable, testable, small.
-- "Full text when it fits" before vector search: documents are tiny; retrieval only adds failure modes at this size.
-- Job-reference routing ("Job #2") because similar requirement sections from different jobs get confused.
-- Dependency injection (createApp(deps)) so every external service is faked in tests; only Mongo is real (in-memory).
-- JWT in an httpOnly cookie (not localStorage) and roles re-read from the DB on every request.
-- Security review caught: admin escalation via an unverified email, Google account pre-hijacking, stale sessions after
-  linking, a slow regex on uploads, unescaped titles in the prompt, unsafe markdown links/images, and an exposed
-  local DB port. Each code fix has a regression test that failed first.
--->
+**Option 4 (Career Intelligence).** I was job hunting while doing this assignment, so I could judge the answers
+against my own resume. It also has a clear product shape: one resume, many jobs, and questions that compare them.
+
+**MERN with MongoDB Atlas Vector Search.** MERN is the stack I work in daily, so I could defend every line. Atlas
+Vector Search let me keep users, documents, vectors and LLM traces in one database instead of running and syncing a
+separate vector store. The same code runs locally (`atlas-local` image) and in the cloud.
+
+**A small hand-written RAG pipeline instead of LangChain/LlamaIndex.** The assignment is about chunking, retrieval
+and prompt decisions. A framework would have hidden exactly those. The whole pipeline is about 300 lines, and every step
+has unit tests.
+
+**Send the full documents when they fit.** A resume plus a few job descriptions is usually well under ~6k tokens.
+At that size vector search can only *lose* information, so I skip it and only fall back to search when the
+documents grow. This was a deliberate trade-off against "always use the vector DB".
+
+**Route questions to the right job.** "What am I missing for Job #2?" must not pull Job #1's requirements, which look
+semantically similar. A small router resolves "Job #2", "#2", or a distinctive title/company word, and filters
+retrieval to that job plus the resume.
+
+**Split chunks by section.** Resumes and job descriptions have strong headings (Skills, Experience, Requirements). Chunking
+on them makes citations meaningful (`[Job #2 › Requirements]`) and keeps "Benefits" out of a skills answer.
+
+**Rules where rules are enough.** The ATS checklist (contact details, headings, measurable results, length, links) is
+plain code, not an LLM call. It is instant, free and gives the same answer every time. The LLM is only used for
+judgement (fit scores, gaps, answers).
+
+**Security choices.** JWT in an httpOnly cookie (not localStorage); the role is read from the database on every
+request so a demotion applies immediately; `userId` on every query and every vector search; documents treated as
+untrusted input in prompts. The admin role is only granted through a verified (Google) email, never through a password
+sign-up.
+
+**Testability through dependency injection.** `createApp(deps)` receives the LLM client, retriever, file store and
+Google verifier, so tests swap in fakes and run without network access or API cost. Only MongoDB is real (in-memory).
+
+**Deployment.** Two containers on Northflank. The frontend's nginx proxies `/api` over the private network, so the
+API has no public port and the browser sees one origin (simple cookies, no CORS issues, streaming works).
 
 ---
 
@@ -239,31 +261,52 @@ Facts you can draw on:
 
 ## 7. How I used AI tools
 
-<!-- DRAFT: Muthu, write this in your own voice. Facts about how this repo was built:
-- Tool: Claude Code (CLI/VS Code) with a structured workflow: brainstorm → written design spec
-  (docs/superpowers/specs) → task-by-task implementation plan (docs/superpowers/plans) → test-first implementation → review.
-- I made the product decisions (option, MERN, theme picked from 3 live mockups, Google OAuth + RBAC, Atlas DB);
-  the assistant proposed options and trade-offs.
-- Guardrails I relied on: tests written before the code, an automated security review on every commit (10 findings
-  across 6 reviews, all fixed; the code fixes have regression tests), a live eval against the real model, and
-  reviewing screenshots of the real UI.
-- Things the AI got wrong that verification caught: the citation rate was 40% on first contact with the real model;
-  the SSE stream hung behind the dev proxy; a stale server process silently served old code during testing.
-- My do's and don'ts: (write yours)
--->
+I used **Claude Code** (in VS Code) as a pair programmer, with a fixed process rather than "just write the app":
+
+1. **Brainstorm, then a written design spec** ([docs/superpowers/specs](docs/superpowers/specs)). I made the product calls:
+   Option 4, the MERN stack, the "Midnight Emerald" theme (picked from three live mockups), Google sign-in with
+   user/admin roles, Atlas as the database, Northflank for hosting, and later the resume-evaluation scorecard.
+   The assistant proposed options and trade-offs.
+2. **A task-by-task plan** ([docs/superpowers/plans](docs/superpowers/plans)) with file names, interfaces and test cases.
+   Both documents are committed, so the work is repeatable and a reviewer can see *why* the code looks the way it does.
+3. **Tests first.** Each task started with a failing test, then the code to make it pass. That is how I kept the code
+   to my standards: the tests describe the behaviour I want, and nothing merges without them.
+4. **Independent checks.** An automated security review ran on every commit (10 findings over the project, all fixed
+   with regression tests), a separate reviewer read the whole branch before submission, and the eval ran against
+   the real model.
+
+**What the AI got wrong, and how I caught it**
+- The first prompt cited sources in only 40% of answers against the real model. The tests passed because they used a fake
+  model. The eval caught it, and prompt changes fixed it.
+- The streaming chat hung behind the dev proxy. I only saw that in a real browser, not in tests.
+- A scanned PDF was being stored with "-- 1 of 2 --" as its title, because the PDF library inserts page markers.
+  The final review caught it.
+- During testing an old server process kept serving stale code. Lesson: check what is actually running before trusting a result.
+
+**My do's and don'ts with AI coding assistants**
+- **Do** give it a spec and a plan first. Vague requests produce code you can't defend.
+- **Do** make it write the failing test before the code, and read the tests yourself: they are the contract.
+- **Do** check against reality (real model, real browser, real container). Fakes and mocks hide integration bugs.
+- **Do** make the decisions yourself and let it lay out options and trade-offs.
+- **Don't** accept "it works" without running it.
+- **Don't** let it add a library or framework you can't explain in an interview.
+- **Don't** paste secrets into the chat. I did this once with a database URL; secrets belong in `.env` only, and
+  anything exposed gets rotated.
 
 ---
 
 ## 8. What I'd do differently with more time
 
-<!-- DRAFT: Muthu, rewrite in your own words. Candidates:
-- Hybrid retrieval (BM25 / Atlas Search + vector) for exact skill names like "WCAG" or "Kubernetes".
-- Re-ranking, and evaluating retrieval separately from generation.
-- Skill normalisation (React.js = React) with a taxonomy, so fit scores are more stable.
-- Fit analysis that shows its evidence per skill (quoting resume lines), not just lists.
-- Conversation history persisted per user; export of an interview-prep pack (PDF).
-- Voice mock-interview mode.
--->
+- **Hybrid retrieval.** Combine keyword search (Atlas Search / BM25) with vectors, because exact skill names like
+  "WCAG" or "Kubernetes" matter more here than general similarity. Then evaluate retrieval separately from generation.
+- **A bigger, harder eval set.** The current 12 questions were written by me and can overfit. I would add real
+  resumes and job descriptions, an LLM-as-judge for faithfulness, and run the eval in CI on every prompt or model change.
+- **Evidence for every score.** Show the resume line behind each matched skill and each scorecard number, so the
+  candidate can trust (or argue with) the score.
+- **Skill normalisation.** Map "React.js" and "ReactJS" to "React" with a small taxonomy, so scores are stable between runs.
+- **Production basics I skipped:** a CI pipeline, Redis-backed rate limits, a background queue for analysis, OCR for
+  scanned PDFs, and a confirm/undo step on delete.
+- **Product ideas:** saved conversation history, an exportable interview-prep pack, and a voice mock-interview mode.
 
 ---
 
