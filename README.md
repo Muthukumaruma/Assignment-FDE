@@ -12,6 +12,10 @@ Built for the Newpage Solutions AI FDE assignment (Option 4: Career Intelligence
 |---|---|---|
 | ![](docs/screenshots/01-login.png) | ![](docs/screenshots/04-fit-drawer.png) | ![](docs/screenshots/05-admin.png) |
 
+| Resume evaluation across jobs | Job scorecard |
+|---|---|
+| ![](docs/screenshots/07-resume-evaluation.png) | ![](docs/screenshots/08-job-scorecard.png) |
+
 **Stack:** MongoDB Atlas (documents and vector search), Express + TypeScript, React 19 + Vite + Tailwind v4, OpenAI.
 **Tests:** 97 backend + 27 frontend. **Eval:** 12-question golden set run against the real model.
 
@@ -79,7 +83,11 @@ flowchart LR
 
 - **Ingest:** extract text (pdf-parse / mammoth) → split by section → embed → store chunks with `userId`, `docId`, label and section.
   The original file goes to Cloudflare R2 (`users/{userId}/{docId}.pdf`, private, downloadable only by its owner) when `R2_*` is configured.
-  Adding a job, or replacing the resume, triggers a background **fit analysis** (one structured-output call per job).
+  Adding a job, or replacing the resume, triggers a background **fit analysis** (one structured-output call per job)
+  that returns a fit score plus a 5-criterion **scorecard** (ATS compatibility, JD keyword matching, technical skills,
+  experience relevance, leadership & architecture). The resume panel compares all jobs side by side and adds a
+  **rule-based ATS checklist** (contact details, section headings, measurable results, length, profile links).
+  It's rule-based on purpose: those checks are mechanical, so code is instant, free, deterministic and explainable.
 - **Chat:** guard → route ("Job #2", title or company) → retrieve → prompt → stream over SSE → citation filter → trace.
 - **Auth:** email/password (bcrypt) or Google ID token → our own JWT in an httpOnly cookie; roles `user` / `admin`.
 
