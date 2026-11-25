@@ -12,7 +12,7 @@ const EnvSchema = z.object({
   JWT_SECRET: z.string().min(16),
   GOOGLE_CLIENT_ID: z.string().default(''),
   ADMIN_EMAIL: z.string().default(''),
-  CORS_ORIGIN: z.string().default('http://localhost:5173'),
+  CORS_ORIGIN: z.string().default('http://localhost:5190'),
   LOG_LEVEL: z.string().default('info'),
 });
 
