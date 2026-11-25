@@ -11,7 +11,11 @@ export async function extractText(buf: Buffer, mime: string, filename: string): 
   if (ext === '.pdf' || mime === 'application/pdf') {
     const parser = new PDFParse({ data: new Uint8Array(buf) });
     try {
-      return (await parser.getText()).text;
+      // pdf-parse v2 joins pages with "-- 1 of 2 --" by default. Those markers would make a
+      // scanned (text-less) PDF look non-empty and leak into chunks and citations, so join with
+      // a newline instead, and strip any marker lines defensively.
+      const { text } = await parser.getText({ pageJoiner: '\n' });
+      return text.replace(/^\s*-- \d+ of \d+ --\s*$/gm, '');
     } finally {
       await parser.destroy();
     }

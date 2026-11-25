@@ -11,3 +11,19 @@ describe('extractText', () => {
     await expect(extractText(Buffer.from('x'), 'image/png', 'a.png')).rejects.toMatchObject({ status: 415 });
   });
 });
+
+describe('extractText PDFs', () => {
+  it('returns no text for an image-only (scanned) PDF, so ingestion can reject it', async () => {
+    const { makePdf } = await import('./pdfFixture.js');
+    const text = await extractText(makePdf([[], []]), 'application/pdf', 'scan.pdf');
+    expect(text.trim()).toBe('');
+  });
+
+  it('does not inject page markers into multi-page text', async () => {
+    const { makePdf } = await import('./pdfFixture.js');
+    const text = await extractText(makePdf([['Page one text'], ['Page two text']]), 'application/pdf', 'cv.pdf');
+    expect(text).toContain('Page one text');
+    expect(text).toContain('Page two text');
+    expect(text).not.toMatch(/-- \d+ of \d+ --/);
+  });
+});

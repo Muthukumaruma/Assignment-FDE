@@ -121,3 +121,18 @@ describe('documents API', () => {
     expect((await request(app).get('/api/documents')).status).toBe(401);
   });
 });
+
+describe('scanned PDF upload', () => {
+  const app = createApp(fakeDeps());
+  beforeAll(startMemoryDb);
+  afterAll(stopMemoryDb);
+
+  it('rejects an image-only PDF with 422 and stores nothing', async () => {
+    const { makePdf } = await import('./pdfFixture.js');
+    const { agent } = await registerAndLogin(app, 'scan@x.com');
+    const res = await agent.post('/api/documents').field('kind', 'resume').attach('file', makePdf([[], []]), 'scan.pdf');
+    expect(res.status).toBe(422);
+    expect(res.body.error).toMatch(/scanned PDF/);
+    expect(await DocumentModel.countDocuments({})).toBe(0);
+  });
+});
