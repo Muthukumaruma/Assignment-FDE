@@ -8,6 +8,7 @@ import { env } from './config/env.js';
 import { errorHandler } from './lib/errors.js';
 import { logger } from './lib/logger.js';
 import { authRouter } from './auth/routes.js';
+import { chatRouter } from './routes/chat.js';
 import { documentsRouter } from './routes/documents.js';
 import { healthRouter } from './routes/health.js';
 import type { AppDeps } from './types.js';
@@ -35,6 +36,7 @@ export function createApp(deps: AppDeps): Express {
   app.use('/api/health', healthRouter);
   app.use('/api/auth', authRouter(deps.google));
   app.use('/api/documents', documentsRouter(deps));
+  app.use('/api/chat', chatRouter(deps));
 
   app.use((_req, res) => {
     res.status(404).json({ error: 'Not found' });
