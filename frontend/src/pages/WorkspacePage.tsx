@@ -96,6 +96,7 @@ export default function WorkspacePage() {
       <FitDrawer
         doc={openDoc}
         hasResume={hasResume}
+        jobs={docs.filter((d) => d.kind === 'job')}
         onClose={() => setOpenId(null)}
         onChanged={changed}
         onAsk={(question) => {

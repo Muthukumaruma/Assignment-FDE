@@ -4,10 +4,14 @@ import { useState } from 'react';
 import { api } from '../api/client';
 import type { Doc } from '../types';
 import FitRing from './FitRing';
+import ResumeEvaluation from './ResumeEvaluation';
+import Scorecard from './Scorecard';
 
 interface Props {
   doc: Doc | null;
   hasResume: boolean;
+  /** All jobs, for the resume's side-by-side evaluation. */
+  jobs?: Doc[];
   onClose: () => void;
   onChanged: () => void;
   onAsk: (question: string) => void;
@@ -31,10 +35,23 @@ function Chips({ items, tone }: { items: string[]; tone: 'match' | 'gap' }) {
   );
 }
 
-export default function FitDrawer({ doc, hasResume, onClose, onChanged, onAsk }: Props) {
+export default function FitDrawer({ doc, hasResume, jobs = [], onClose, onChanged, onAsk }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const a = doc?.analysis;
+
+  async function rescoreAll() {
+    setBusy(true);
+    setError(null);
+    try {
+      await Promise.all(jobs.map((j) => api.post(`/api/documents/${j.id}/analyze`)));
+      onChanged();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Re-scoring failed');
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function reanalyze() {
     if (!doc) return;
@@ -62,7 +79,7 @@ export default function FitDrawer({ doc, hasResume, onClose, onChanged, onAsk }:
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', stiffness: 260, damping: 30 }}
-            className="fixed inset-y-0 right-0 z-40 flex w-full max-w-md flex-col border-l border-pine bg-forest"
+            className={`fixed inset-y-0 right-0 z-40 flex w-full flex-col border-l border-pine bg-forest ${doc.kind === 'resume' ? 'max-w-2xl' : 'max-w-md'}`}
           >
             <header className="flex items-start gap-4 border-b border-pine p-6">
               {doc.kind === 'job' && <FitRing score={doc.analysisStale ? undefined : a?.score} size={76} stroke={7} pending={busy || (hasResume && !a)} />}
@@ -87,7 +104,10 @@ export default function FitDrawer({ doc, hasResume, onClose, onChanged, onAsk }:
 
             <div className="flex-1 space-y-7 overflow-y-auto p-6">
               {doc.kind === 'resume' ? (
-                <p className="text-sage">This is the resume every job is scored against. Upload a new one to replace it and re-score all jobs.</p>
+                <>
+                  <p className="text-sage">Every job is scored against this resume. Upload a new one to replace it and re-score all jobs.</p>
+                  <ResumeEvaluation resumeId={doc.id} jobs={jobs} onRescore={() => void rescoreAll()} rescoring={busy} />
+                </>
               ) : !hasResume ? (
                 <p className="text-sage">Add your resume to see how well you fit this job.</p>
               ) : !a ? (
@@ -96,6 +116,14 @@ export default function FitDrawer({ doc, hasResume, onClose, onChanged, onAsk }:
                 <>
                   {doc.analysisStale && <p className="text-sm text-amber">Your resume changed since this score was computed.</p>}
                   <p className="text-lg leading-snug text-mint">{a.summary}</p>
+                  <section>
+                    <h3 className="mb-2 text-sm font-semibold text-sage">Evaluation</h3>
+                    {a.scorecard ? (
+                      <Scorecard analysis={a} />
+                    ) : (
+                      <p className="text-sm text-sage">Re-score this job (button below) to get the detailed scorecard.</p>
+                    )}
+                  </section>
                   <section>
                     <h3 className="mb-2 text-sm font-semibold text-sage">You already have</h3>
                     <Chips items={a.matchedSkills} tone="match" />

@@ -15,7 +15,18 @@ export interface FitAnalysis {
   experienceAlignment: string;
   summary: string;
   interviewTopics: string[];
+  /** Absent on analyses made before scorecards existed (re-score to get one). */
+  scorecard?: Record<ScorecardKey, { score: number; note: string }>;
   analyzedAt?: string;
+}
+
+export type ScorecardKey = 'atsCompatibility' | 'keywordMatch' | 'technicalSkills' | 'experienceRelevance' | 'leadershipArchitecture';
+
+export interface AtsCheck {
+  id: string;
+  label: string;
+  passed: boolean;
+  detail: string;
 }
 
 export interface Doc {
