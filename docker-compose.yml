@@ -26,8 +26,8 @@ services:
   mongo:
     profiles: ['local-db']
     image: mongodb/mongodb-atlas-local:8
-    ports:
-      - '27017:27017'
+    # No published ports: only the backend reaches it, over the private compose network.
+    # (Unauthenticated dev database; never expose it on a host interface.)
     volumes:
       - mongo-data:/data/db
 
