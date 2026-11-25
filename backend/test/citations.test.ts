@@ -11,3 +11,10 @@ describe('filterCitations', () => {
     expect(filterCitations('a [Job #1 > Requirements]', ['Job #1']).sources).toEqual([{ label: 'Job #1', section: 'Requirements' }]);
   });
 });
+
+describe('filterCitations keeps markdown structure', () => {
+  it('preserves nested list indentation and only removes the space before a dropped citation', () => {
+    const answer = '- Gap [Resume › Skills]\n  - sub-point [Job #9 › X]\n    code-ish  spacing';
+    expect(filterCitations(answer, ['Resume']).text).toBe('- Gap [Resume › Skills]\n  - sub-point\n    code-ish  spacing');
+  });
+});
