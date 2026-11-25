@@ -21,6 +21,7 @@ export default function LoginPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -41,6 +42,10 @@ export default function LoginPage() {
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (mode === 'signup' && password !== confirm) {
+      setError("Passwords don't match");
+      return;
+    }
     void run(() => (mode === 'signin' ? login(email, password) : register(name, email, password)));
   }
 
@@ -125,8 +130,34 @@ export default function LoginPage() {
                 required
                 minLength={mode === 'signup' ? 8 : undefined}
                 autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+                aria-describedby={mode === 'signup' ? 'password-hint' : undefined}
               />
             </label>
+            {mode === 'signup' && (
+              <>
+                <p id="password-hint" className="-mt-2.5 text-xs text-sage/80">
+                  At least 8 characters.
+                </p>
+                <label className="block">
+                  <span className="mb-1.5 block text-sm text-sage">Confirm password</span>
+                  <input
+                    className="field"
+                    type="password"
+                    value={confirm}
+                    onChange={(e) => setConfirm(e.target.value)}
+                    required
+                    autoComplete="new-password"
+                    aria-invalid={confirm.length > 0 && confirm !== password}
+                    aria-describedby="confirm-hint"
+                  />
+                </label>
+                {confirm.length > 0 && confirm !== password && (
+                  <p id="confirm-hint" className="-mt-2.5 text-xs text-rose">
+                    Passwords don't match yet.
+                  </p>
+                )}
+              </>
+            )}
             {error && (
               <p role="alert" className="rounded-lg border border-rose/30 bg-rose/10 px-3 py-2 text-sm text-rose">
                 {error}
