@@ -20,7 +20,7 @@ const Body = z.object({
   kind: z.enum(['resume', 'job']),
   title: z.string().trim().max(200).optional(),
   company: z.string().trim().max(200).optional(),
-  text: z.string().max(200_000).optional(),
+  text: z.string().optional(), // length enforced below (413) after file extraction too
 });
 
 const SAMPLE_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../sample-data');
@@ -38,11 +38,16 @@ export function toPublicDoc(d: Omit<DocumentDoc, 'rawText'>) {
   };
 }
 
+/** Extracted text above this is rejected: bounds memory, chunk count and embedding cost per upload. */
+export const MAX_TEXT_CHARS = 200_000;
+
 /** "Senior Engineer — Acme" on the first line → { title, company } */
 function titleFromText(text: string): { title: string; company?: string } {
-  const first = text.trim().split('\n')[0]?.trim() ?? 'Untitled';
-  const [title, company] = first.split(/\s+[—–-]\s+/);
-  return { title: title.slice(0, 200), company: company?.slice(0, 200) };
+  // Truncate BEFORE matching and use bounded quantifiers: an unbounded \s+ on a huge
+  // whitespace run backtracks quadratically and would block the event loop.
+  const first = text.trimStart().slice(0, 300).split('\n')[0].trim() || 'Untitled';
+  const [title, company] = first.split(/\s{1,3}[—–-]\s{1,3}/);
+  return { title: title.trim().slice(0, 200) || 'Untitled', company: company?.trim().slice(0, 200) || undefined };
 }
 
 export function documentsRouter(deps: AppDeps): Router {
@@ -73,6 +78,7 @@ export function documentsRouter(deps: AppDeps): Router {
       text = await extractText(req.file.buffer, req.file.mimetype, req.file.originalname);
       fallbackTitle = path.parse(req.file.originalname).name;
     }
+    if (text.length > MAX_TEXT_CHARS) throw new HttpError(413, 'Document too large (max 200,000 characters of text)');
     if (!text.trim()) throw new HttpError(422, 'No extractable text');
     const guessed = titleFromText(text);
     const doc = await ingestDocument(

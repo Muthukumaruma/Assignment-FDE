@@ -71,6 +71,22 @@ describe('documents API', () => {
     expect(big.status).toBe(413);
   });
 
+  it('rejects files whose extracted text exceeds 200k characters with 413', async () => {
+    const { agent } = await registerAndLogin(app, 'huge@x.com');
+    const res = await agent.post('/api/documents').field('kind', 'job').attach('file', Buffer.alloc(200_001, 97), 'huge.txt');
+    expect(res.status).toBe(413);
+  });
+
+  it('handles a pathological very long first line quickly (no regex backtracking)', async () => {
+    const { agent } = await registerAndLogin(app, 'redos@x.com');
+    const evil = 'a' + ' '.repeat(150_000) + 'b\nRequirements\nReact';
+    const started = Date.now();
+    const res = await agent.post('/api/documents').send({ kind: 'job', text: evil });
+    expect(Date.now() - started).toBeLessThan(2000);
+    expect(res.status).toBe(201);
+    expect(res.body.title.length).toBeLessThanOrEqual(200);
+  });
+
   it("one user cannot see or delete another user's documents", async () => {
     const a = await registerAndLogin(app, 'owner@x.com');
     const b = await registerAndLogin(app, 'intruder@x.com');
