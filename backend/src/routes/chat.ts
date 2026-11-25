@@ -1,4 +1,6 @@
 import { Router, type Response } from 'express';
+import rateLimit from 'express-rate-limit';
+import { env } from '../config/env.js';
 import { z } from 'zod';
 import { currentUser, requireAuth } from '../auth/middleware.js';
 import { HttpError } from '../lib/errors.js';
@@ -7,14 +9,14 @@ import { DocumentModel } from '../models/Document.js';
 import { filterCitations } from '../rag/citations.js';
 import { buildContextBlock, retrieveContext, type ContextDoc } from '../rag/context.js';
 import { checkInput, classifyTopic, MAX_QUESTION_CHARS, OFF_TOPIC_REPLY } from '../rag/guard.js';
-import { buildMessages } from '../rag/prompt.js';
+import { buildMessages, summarizeDocs } from '../rag/prompt.js';
 import type { AppDeps } from '../types.js';
 
 const Body = z.object({
   messages: z
     .array(z.object({ role: z.enum(['user', 'assistant']), content: z.string().max(20_000) }))
     .min(1)
-    .max(50),
+    .max(50), // history is further budgeted in buildMessages
 });
 
 function sse(res: Response, event: string, data: unknown) {
@@ -24,7 +26,15 @@ function sse(res: Response, event: string, data: unknown) {
 export function chatRouter(deps: AppDeps): Router {
   const router = Router();
 
-  router.post('/', requireAuth, async (req, res) => {
+  // Per-user limit: each chat turn costs real money (embedding + 1-2 completions).
+  const limiter = rateLimit({
+    windowMs: 60_000,
+    limit: env.NODE_ENV === 'test' ? 1000 : 20,
+    keyGenerator: (req) => currentUser(req).id,
+    message: { error: 'Too many questions — please wait a minute.' },
+  });
+
+  router.post('/', requireAuth, limiter, async (req, res) => {
     const user = currentUser(req);
     const { messages } = Body.parse(req.body);
     const last = messages[messages.length - 1];
@@ -72,7 +82,7 @@ export function chatRouter(deps: AppDeps): Router {
         question: last.content,
         history: messages.slice(0, -1),
         contextBlock: buildContextBlock(retrieved.chunks),
-        docsSummary: contextDocs.map((d) => `- ${d.label}: ${d.title}${d.company ? ` at ${d.company}` : ''}`).join('\n'),
+        docsSummary: summarizeDocs(contextDocs),
         missingRefs: retrieved.missingRefs,
         hasResume: contextDocs.some((d) => d.kind === 'resume'),
       });
