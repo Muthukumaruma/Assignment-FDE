@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown, { defaultUrlTransform } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { ChatMessage } from '../types';
 
@@ -44,7 +44,11 @@ export default function Message({ message, onOpenDoc }: Props) {
       <div className="prose-chat text-mint">
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
-          urlTransform={(url) => url}
+          // Model output is untrusted (documents can carry prompt injections): keep react-markdown's
+          // URL sanitiser, only additionally allowing our internal cite: scheme, and never render images.
+          urlTransform={(url) => (url.startsWith('cite:') ? url : defaultUrlTransform(url))}
+          disallowedElements={['img']}
+          unwrapDisallowed
           components={{
             a: ({ href, children }) => {
               if (href?.startsWith('cite:')) {
@@ -53,8 +57,9 @@ export default function Message({ message, onOpenDoc }: Props) {
                 const section = text.split('›')[1]?.trim() ?? '';
                 return <CitationPill label={label} section={section} onClick={() => onOpenDoc(label)} />;
               }
+              if (!href || !/^(https?:|mailto:)/i.test(href)) return <span>{children}</span>;
               return (
-                <a href={href} target="_blank" rel="noreferrer" className="text-lime underline">
+                <a href={href} target="_blank" rel="noopener noreferrer" className="text-lime underline">
                   {children}
                 </a>
               );
