@@ -1,12 +1,123 @@
 [
-  { "question": "What skills am I missing for Job #2?", "expectLabels": ["Job #2", "Resume"], "expectKeywords": ["RAG", "vector", "Kubernetes"] },
-  { "question": "How does my experience align with Job #3?", "expectLabels": ["Job #3", "Resume"], "expectKeywords": ["MongoDB", "Express", "React"] },
-  { "question": "Do I meet the data visualisation requirement for the Acme role?", "expectLabels": ["Job #1"], "expectKeywords": ["D3", "visual"] },
-  { "question": "Which job am I the best fit for?", "expectLabels": ["Resume"], "expectKeywords": ["Job #3"] },
-  { "question": "Prep me for the Nimbus AI interview", "expectLabels": ["Job #2"], "expectKeywords": ["RAG", "evaluation"] },
-  { "question": "How many years of experience does Job #1 require and do I have them?", "expectLabels": ["Job #1", "Resume"], "expectKeywords": ["5"] },
-  { "question": "What cloud experience do I have?", "expectLabels": ["Resume"], "expectKeywords": ["AWS"] },
-  { "question": "Does Job #3 need payment gateway experience?", "expectLabels": ["Job #3"], "expectKeywords": ["Stripe", "Razorpay"] },
-  { "question": "What about Job #7?", "expectLabels": [], "expectKeywords": ["not uploaded"] },
-  { "question": "Which of my projects are most relevant to Job #1?", "expectLabels": ["Resume"], "expectKeywords": ["ExpenseTracker", "React"] }
+  {
+    "question": "What skills am I missing for Job #2?",
+    "expectLabels": [
+      "Job #2"
+    ],
+    "expectKeywords": [
+      "RAG",
+      "vector",
+      "Kubernetes"
+    ]
+  },
+  {
+    "question": "How does my experience align with Job #3?",
+    "expectLabels": [
+      "Job #3",
+      "Resume"
+    ],
+    "expectKeywords": [
+      "MongoDB",
+      "Express",
+      "React"
+    ]
+  },
+  {
+    "question": "Do I meet the data visualisation requirement for the Acme role?",
+    "expectLabels": [
+      "Job #1"
+    ],
+    "expectKeywords": [
+      "D3",
+      "visual"
+    ]
+  },
+  {
+    "question": "Which job am I the best fit for?",
+    "expectLabels": [
+      "Resume"
+    ],
+    "expectKeywords": [
+      "Job #3"
+    ]
+  },
+  {
+    "question": "Prep me for the Nimbus AI interview",
+    "expectLabels": [
+      "Job #2"
+    ],
+    "expectKeywords": [
+      "RAG",
+      "evaluation"
+    ]
+  },
+  {
+    "question": "How many years of experience does Job #1 require and do I have them?",
+    "expectLabels": [
+      "Job #1",
+      "Resume"
+    ],
+    "expectKeywords": [
+      "5"
+    ]
+  },
+  {
+    "question": "What cloud experience do I have?",
+    "expectLabels": [
+      "Resume"
+    ],
+    "expectKeywords": [
+      "AWS"
+    ]
+  },
+  {
+    "question": "Does Job #3 need payment gateway experience?",
+    "expectLabels": [
+      "Job #3"
+    ],
+    "expectKeywords": [
+      "Stripe",
+      "Razorpay"
+    ]
+  },
+  {
+    "question": "What about Job #7?",
+    "expectLabels": [],
+    "expectKeywords": [
+      "not uploaded"
+    ]
+  },
+  {
+    "question": "Which of my projects are most relevant to Job #1?",
+    "expectLabels": [
+      "Resume"
+    ],
+    "expectKeywords": [
+      "ExpenseTracker",
+      "React"
+    ]
+  },
+  {
+    "question": "Give me a table comparing my skills with the Job #1 requirements",
+    "expectLabels": [
+      "Job #1",
+      "Resume"
+    ],
+    "expectKeywords": [
+      "D3",
+      "WCAG"
+    ]
+  },
+  {
+    "question": "Compare my fit for Job #2 and Job #3 in a table",
+    "expectLabels": [
+      "Job #2",
+      "Job #3",
+      "Resume"
+    ],
+    "expectKeywords": [
+      "RAG",
+      "MongoDB"
+    ]
+  }
 ]

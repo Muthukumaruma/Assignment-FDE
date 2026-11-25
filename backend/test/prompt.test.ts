@@ -60,3 +60,9 @@ describe('citation reinforcement', () => {
     expect(buildMessages(base)[0].content).toMatch(/Example/);
   });
 });
+
+describe('citations in tables', () => {
+  it('requires a Source column with citations when answering with a table', () => {
+    expect(buildMessages(base)[0].content).toMatch(/table.*Source column/is);
+  });
+});

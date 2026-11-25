@@ -2,9 +2,10 @@
  * Offline quality check against the sample data, using the REAL model + Atlas index.
  *   npm run eval
  * Metrics:
- *  - citation hit-rate: did the answer cite every expected document label?
- *  - keyword recall: fraction of expected facts mentioned in the answer.
- * Cheap and deterministic enough to run before changing prompts, chunking or models.
+ *  - grounded answers: share of answers with at least one valid citation (the gate, ≥ 90%).
+ *  - label recall: share of the expected documents that were cited.
+ *  - keyword recall: share of expected facts mentioned in the answer.
+ * LLM output varies run to run, so compare a few runs before trusting a change.
  */
 import { readFile } from 'node:fs/promises';
 import mongoose from 'mongoose';
@@ -45,24 +46,42 @@ const agent = request.agent(app);
 await agent.post('/api/auth/register').send({ email, password: 'eval-password-123', name: 'Eval' });
 await agent.post('/api/documents/sample');
 
-let hits = 0;
-let recallSum = 0;
+const pct = (x: number) => `${(x * 100).toFixed(0).padStart(3)}%`;
+let groundedCount = 0;
+let groundable = 0;
+let labelRecallSum = 0;
+let keywordRecallSum = 0;
 const rows: string[] = [];
 for (const c of cases) {
   const res = await agent.post('/api/chat').send({ messages: [{ role: 'user', content: c.question }] }).buffer(true);
   const sourcesEvent = res.text.split('\n\n').find((b) => b.startsWith('event: sources'));
   const data = sourcesEvent ? JSON.parse(sourcesEvent.split('data: ')[1]) : { text: '', sources: [] };
   const cited = new Set<string>(data.sources.map((s: { label: string }) => s.label));
-  const hit = c.expectLabels.every((l) => cited.has(l));
+
+  // Grounded: at least one valid citation. Cases with no expected labels (e.g. "Job #7?") are exempt.
+  const shouldCite = c.expectLabels.length > 0;
+  const grounded = cited.size > 0;
+  if (shouldCite) {
+    groundable += 1;
+    groundedCount += grounded ? 1 : 0;
+  }
+  const labelRecall = shouldCite ? c.expectLabels.filter((l) => cited.has(l)).length / c.expectLabels.length : 1;
   const found = c.expectKeywords.filter((k) => data.text.toLowerCase().includes(k.toLowerCase()));
-  const recall = c.expectKeywords.length ? found.length / c.expectKeywords.length : 1;
-  hits += hit ? 1 : 0;
-  recallSum += recall;
-  rows.push(`${hit ? 'PASS' : 'MISS'}  recall ${(recall * 100).toFixed(0).padStart(3)}%  ${c.question}`);
+  const keywordRecall = c.expectKeywords.length ? found.length / c.expectKeywords.length : 1;
+  labelRecallSum += labelRecall;
+  keywordRecallSum += keywordRecall;
+
+  const ok = (!shouldCite || grounded) && labelRecall === 1 && keywordRecall === 1;
+  let row = `${ok ? 'PASS' : 'WARN'}  labels ${pct(labelRecall)}  keywords ${pct(keywordRecall)}  ${c.question}`;
+  if (!ok) row += `\n      cited: [${[...cited].join(', ')}]  missing keywords: [${c.expectKeywords.filter((k) => !found.includes(k)).join(', ')}]`;
+  rows.push(row);
 }
 
-const hitRate = hits / cases.length;
+const groundedRate = groundable ? groundedCount / groundable : 1;
 console.log('\n' + rows.join('\n'));
-console.log(`\nCitation hit-rate: ${(hitRate * 100).toFixed(0)}%   Keyword recall: ${((recallSum / cases.length) * 100).toFixed(0)}%`);
+console.log(
+  `\nGrounded answers: ${pct(groundedRate)}   Label recall: ${pct(labelRecallSum / cases.length)}   Keyword recall: ${pct(keywordRecallSum / cases.length)}`,
+);
 await mongoose.disconnect();
-process.exit(hitRate >= 0.8 ? 0 : 1);
+// Gate on the property users rely on most: every factual answer carries at least one valid citation.
+process.exit(groundedRate >= 0.9 ? 0 : 1);

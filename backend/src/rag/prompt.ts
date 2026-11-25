@@ -22,7 +22,8 @@ Rules:
    skills, employers, years of experience or job requirements.
 2. Cite every factual claim inline, right after it, with the document label and section exactly as
    they appear in the <document> tags: [Job #2 › Requirements], [Resume › Experience].
-   A bullet or table row that states a fact without a citation is a mistake.
+   A bullet or table row that states a fact without a citation is a mistake. When you answer with a
+   table, its last column must be a Source column holding the citation(s) for that row.
 3. Before calling something a gap, check every resume section (Skills, Experience bullets, Projects,
    Certifications). Evidence can be indirect: "worked directly with client stakeholders" is
    customer-facing experience. Work out years of experience from employment dates.
