@@ -65,6 +65,11 @@ export async function streamChat(messages: { role: string; content: string }[], 
       if (event === 'token') h.onToken(data.t);
       else if (event === 'sources') h.onDone({ text: data.text, sources: data.sources });
       else if (event === 'error') throw new ApiError(500, data.error);
+      else if (event === 'done') {
+        // Don't wait for the socket to close: proxies may keep the connection alive.
+        await reader.cancel().catch(() => undefined);
+        return;
+      }
     }
   }
 }

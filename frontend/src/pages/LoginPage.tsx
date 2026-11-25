@@ -53,7 +53,7 @@ export default function LoginPage() {
           <FitRing score={72} size={30} stroke={4} />
           <span className="font-display text-lg font-semibold text-mint">CareerLens</span>
         </div>
-        <h1 className="mt-10 max-w-xl text-5xl leading-[1.02] font-bold text-mint lg:text-6xl" style={{ fontVariationSettings: "'wdth' 78" }}>
+        <h1 className="mt-10 max-w-xl text-5xl leading-[1.02] font-bold text-mint lg:text-6xl" style={{ fontVariationSettings: "'wdth' 86", letterSpacing: '-0.025em' }}>
           Know where you stand before the interview.
         </h1>
         <p className="mt-5 max-w-md text-lg text-sage">

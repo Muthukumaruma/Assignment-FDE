@@ -5,3 +5,4 @@ dist/
 coverage/
 .doc/
 *.log
+.playwright-mcp/

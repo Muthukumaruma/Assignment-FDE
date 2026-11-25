@@ -26,6 +26,11 @@ const server = createApp(deps).listen(env.PORT, () => {
   logger.info({ port: env.PORT, db: env.MONGODB_DB, chatModel: env.OPENAI_CHAT_MODEL }, 'CareerLens API listening');
 });
 
+server.on('error', (err) => {
+  logger.fatal({ err }, 'server failed to start (is the port already in use?)');
+  process.exit(1);
+});
+
 async function shutdown(signal: string) {
   logger.info({ signal }, 'shutting down');
   server.close();

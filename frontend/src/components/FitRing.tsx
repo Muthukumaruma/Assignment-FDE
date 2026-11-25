@@ -50,7 +50,7 @@ export default function FitRing({ score, size = 44, stroke = 5, delay = 0, pendi
         className="absolute inset-0 grid place-items-center font-display font-bold tabular-nums"
         style={{ fontSize: size * 0.27, color: has ? color : 'var(--color-sage)' }}
       >
-        {has ? `${score}%` : pending ? '' : '–'}
+        {size < 36 ? '' : has ? `${score}%` : pending ? '' : '–'}
       </span>
     </div>
   );

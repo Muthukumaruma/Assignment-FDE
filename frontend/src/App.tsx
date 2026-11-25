@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
 import ProtectedRoute from './auth/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
+import WorkspacePage from './pages/WorkspacePage';
 
 export default function App() {
   return (
@@ -13,7 +14,7 @@ export default function App() {
             path="/"
             element={
               <ProtectedRoute>
-                <div className="p-10">Workspace coming in Task 14</div>
+                <WorkspacePage />
               </ProtectedRoute>
             }
           />
