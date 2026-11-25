@@ -25,5 +25,6 @@ export async function registerAndLogin(app: Express, email: string) {
   const agent = request.agent(app);
   const res = await agent.post('/api/auth/register').send({ email, password: 'password123', name: email.split('@')[0] });
   if (res.status !== 201) throw new Error(`register failed: ${res.status} ${JSON.stringify(res.body)}`);
-  return { agent, user: res.body as { id: string; email: string; role: string } };
+  const cookie = ([] as string[]).concat(res.headers['set-cookie'] ?? []).map((c) => c.split(';')[0]).join('; ');
+  return { agent, cookie, user: res.body as { id: string; email: string; role: string } };
 }
