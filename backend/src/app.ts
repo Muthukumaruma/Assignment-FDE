@@ -29,9 +29,13 @@ export interface AppOptions {
    * through the proxy, so the client IP that the proxy forwards can be trusted for rate limiting.
    */
   proxySecret?: string;
+  /** Per-user budget for LLM-costly document requests per 10 minutes (default 30; tests override). */
+  costLimitPerWindow?: number;
 }
 
-export function createApp(deps: AppDeps, opts: AppOptions = { proxySecret: env.PROXY_SECRET || undefined }): Express {
+export function createApp(deps: AppDeps, options: AppOptions = {}): Express {
+  // Each option falls back to its own default, so passing one never silently drops another.
+  const opts: AppOptions = { proxySecret: env.PROXY_SECRET || undefined, ...options };
   const app = express();
   app.disable('x-powered-by');
   // Correct client IPs (for rate limiting) depend on how many proxies sit in front of us.
@@ -61,7 +65,7 @@ export function createApp(deps: AppDeps, opts: AppOptions = { proxySecret: env.P
     });
   }
   app.use('/api/auth', authRouter(deps.google));
-  app.use('/api/documents', documentsRouter(deps));
+  app.use('/api/documents', documentsRouter(deps, { costLimitPerWindow: opts.costLimitPerWindow }));
   app.use('/api/chat', chatRouter(deps));
   app.use('/api/admin', adminRouter());
   app.use('/api/metrics', metricsRouter());

@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Router, type Request } from 'express';
 import { isValidObjectId } from 'mongoose';
+import rateLimit from 'express-rate-limit';
 import multer from 'multer';
 import { z } from 'zod';
 import { analyzeJob } from '../analysis/service.js';
@@ -54,9 +55,21 @@ function titleFromText(text: string): { title: string; company?: string } {
   return { title: title.trim().slice(0, 200) || 'Untitled', company: company?.trim().slice(0, 200) || undefined };
 }
 
-export function documentsRouter(deps: AppDeps): Router {
+/** Most jobs a user can compare at once: bounds storage and the cost of re-scoring on resume change. */
+export const MAX_JOBS = 10;
+
+export function documentsRouter(deps: AppDeps, opts: { costLimitPerWindow?: number } = {}): Router {
   const router = Router();
   router.use(requireAuth);
+
+  // Uploads, sample loads and re-scoring each spend OpenAI tokens (embeddings and/or a fit
+  // analysis), and sign-up is open on the public demo: budget them per user, like chat.
+  const costLimiter = rateLimit({
+    windowMs: 10 * 60_000,
+    limit: opts.costLimitPerWindow ?? (env.NODE_ENV === 'test' ? 1000 : 30),
+    keyGenerator: (req) => currentUser(req).id,
+    message: { error: 'Too many uploads or re-scores. Please wait a few minutes.' },
+  });
 
   /** Notify listeners (fit analysis). Awaited in tests for determinism; background in prod. */
   async function notifyIngested(req: Request, userId: string, docId: string) {
@@ -73,9 +86,12 @@ export function documentsRouter(deps: AppDeps): Router {
     res.json(docs.map((d) => toPublicDoc(d)));
   });
 
-  router.post('/', upload.single('file'), async (req, res) => {
+  router.post('/', costLimiter, upload.single('file'), async (req, res) => {
     const user = currentUser(req);
     const body = Body.parse(req.body);
+    if (body.kind === 'job' && (await DocumentModel.countDocuments({ userId: user.id, kind: 'job' })) >= MAX_JOBS) {
+      throw new HttpError(409, `You can compare up to ${MAX_JOBS} jobs. Delete one to add another.`);
+    }
     let text = body.text ?? '';
     let fileName: string | undefined;
     if (req.file) {
@@ -111,8 +127,11 @@ export function documentsRouter(deps: AppDeps): Router {
     res.status(201).json(toPublicDoc(doc.toObject() as unknown as DocumentDoc));
   });
 
-  router.post('/sample', async (req, res) => {
+  router.post('/sample', costLimiter, async (req, res) => {
     const user = currentUser(req);
+    if (await DocumentModel.exists({ userId: user.id })) {
+      throw new HttpError(409, 'Sample data can only be loaded into an empty workspace.');
+    }
     const ctx = { userId: user.id, requestId: String(req.id) };
     const created = [];
     for (const [file, kind] of [['resume.txt', 'resume'], ['job1.txt', 'job'], ['job2.txt', 'job'], ['job3.txt', 'job']] as const) {
@@ -125,7 +144,7 @@ export function documentsRouter(deps: AppDeps): Router {
     res.status(201).json(created.map((d) => toPublicDoc(d.toObject() as unknown as DocumentDoc)));
   });
 
-  router.post('/:id/analyze', async (req, res) => {
+  router.post('/:id/analyze', costLimiter, async (req, res) => {
     const user = currentUser(req);
     const id = String(req.params.id);
     if (!isValidObjectId(id)) throw new HttpError(404, 'Document not found');
